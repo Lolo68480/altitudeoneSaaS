@@ -4,6 +4,57 @@ import { useAppData } from '../contexts/AppDataContext';
 import { useT, useLang } from '../contexts/LangContext';
 import { PageHead } from '../components/Shared';
 
+function ComposeModal({ onClose, fromEmail, t }) {
+  const [to, setTo] = useState('');
+  const [subject, setSubject] = useState('');
+  const [body, setBody] = useState('');
+  const [sent, setSent] = useState(false);
+
+  const send = () => {
+    if (!to.trim()) return;
+    setSent(true);
+    setTimeout(onClose, 1800);
+  };
+
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex:300, display:'flex', alignItems:'flex-end', justifyContent:'flex-end', padding:'0 24px 24px 0', pointerEvents:'none' }}>
+      <div style={{ pointerEvents:'auto', width:520, background:'var(--panel)', border:'1px solid var(--line-2)', borderRadius:14, boxShadow:'0 8px 40px rgba(0,0,0,.45)', display:'flex', flexDirection:'column', animation:'fadeUp .22s var(--ease)' }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 16px', borderBottom:'1px solid var(--line)', background:'var(--panel-2)', borderRadius:'14px 14px 0 0' }}>
+          <span style={{ fontWeight:650, fontSize:14 }}>{t('inbox_compose')}</span>
+          <div style={{ display:'flex', gap:6 }}>
+            <button className="icon-btn" onClick={onClose}><I.x size={15} /></button>
+          </div>
+        </div>
+        <div style={{ padding:'12px 16px', display:'flex', flexDirection:'column', gap:0 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10, borderBottom:'1px solid var(--line)', padding:'8px 0' }}>
+            <span style={{ fontSize:12, color:'var(--tx-4)', width:52, flexShrink:0 }}>De</span>
+            <span style={{ fontSize:13, color:'var(--tx-3)' }}>{fromEmail}</span>
+          </div>
+          <div style={{ display:'flex', alignItems:'center', gap:10, borderBottom:'1px solid var(--line)', padding:'8px 0' }}>
+            <span style={{ fontSize:12, color:'var(--tx-4)', width:52, flexShrink:0 }}>À</span>
+            <input value={to} onChange={e => setTo(e.target.value)} placeholder="destinataire@email.com" autoFocus style={{ flex:1, background:'none', border:'none', outline:'none', fontSize:13, color:'var(--tx)', fontFamily:'var(--font)' }} />
+          </div>
+          <div style={{ display:'flex', alignItems:'center', gap:10, borderBottom:'1px solid var(--line)', padding:'8px 0' }}>
+            <span style={{ fontSize:12, color:'var(--tx-4)', width:52, flexShrink:0 }}>Objet</span>
+            <input value={subject} onChange={e => setSubject(e.target.value)} placeholder="Objet du message" style={{ flex:1, background:'none', border:'none', outline:'none', fontSize:13, color:'var(--tx)', fontFamily:'var(--font)' }} />
+          </div>
+          <textarea value={body} onChange={e => setBody(e.target.value)} placeholder="Votre message…" rows={8}
+            style={{ marginTop:8, background:'none', border:'none', outline:'none', resize:'none', fontSize:13, color:'var(--tx)', fontFamily:'var(--font)', lineHeight:1.6 }} />
+        </div>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 16px', borderTop:'1px solid var(--line)' }}>
+          {sent
+            ? <span style={{ fontSize:13, color:'var(--tx-3)' }}>Envoi disponible après connexion OAuth Gmail/Outlook.</span>
+            : <>
+                <button className="btn primary sm" onClick={send} disabled={!to.trim()}><I.send size={13} /> Envoyer</button>
+                <button className="icon-btn" style={{ color:'var(--tx-4)' }} onClick={onClose}><I.trash size={14} /></button>
+              </>
+          }
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ConnectModal({ onClose, connProvider, setConnProvider, connEmail, setConnEmail, addAccount, t }) {
   return (
     <div style={{ position:'fixed', inset:0, zIndex:300, display:'grid', placeItems:'center', padding:16 }}>
@@ -52,6 +103,7 @@ export default function Inbox() {
     try { const a = JSON.parse(localStorage.getItem('ao_inbox_accounts') || '[]'); return a[0]?.id || null; } catch { return null; }
   });
   const [connecting, setConnecting] = useState(false);
+  const [composing, setComposing] = useState(false);
   const [connProvider, setConnProvider] = useState('gmail');
   const [connEmail, setConnEmail] = useState('');
   const [selectedId, setSelectedId] = useState(null);
@@ -120,7 +172,7 @@ export default function Inbox() {
     <div className="view" style={{ display:'flex', flexDirection:'column', height:'100%' }}>
       <PageHead title={t('inbox_title')} sub={accounts.length === 1 ? '1 boîte connectée' : `${accounts.length} boîtes connectées`}>
         <button className="btn sm" onClick={() => setConnecting(true)}><I.plus size={14} /> {t('inbox_add_account')}</button>
-        <button className="btn primary sm"><I.edit size={14} /> {t('inbox_compose')}</button>
+        <button className="btn primary sm" onClick={() => setComposing(true)}><I.edit size={14} /> {t('inbox_compose')}</button>
       </PageHead>
 
       <div style={{ display:'grid', gridTemplateColumns:'180px 1fr', gap:0, flex:1, overflow:'hidden', border:'1px solid var(--line)', borderRadius:14, background:'var(--panel)' }}>
@@ -170,6 +222,7 @@ export default function Inbox() {
         </div>
       </div>
       {connecting && <ConnectModal onClose={() => setConnecting(false)} connProvider={connProvider} setConnProvider={setConnProvider} connEmail={connEmail} setConnEmail={setConnEmail} addAccount={addAccount} t={t} />}
+      {composing && <ComposeModal onClose={() => setComposing(false)} fromEmail={accounts.find(a=>a.id===activeId)?.email || ''} t={t} />}
     </div>
   );
 }

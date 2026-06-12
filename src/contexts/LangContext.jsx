@@ -2,10 +2,10 @@ import { createContext, useContext } from 'react';
 
 const TRANSLATIONS = {
   en: {
-    nav_dashboard:'Dashboard', nav_inbox:'Inbox', nav_jobs:'Job Search', nav_crm:'CRM', nav_leads:'Leads & Prospecting', nav_prospecting:'Leads & Prospecting', nav_clients:'Network',
+    nav_dashboard:'Dashboard', nav_inbox:'Inbox', nav_jobs:'Job Search', nav_crm:'CRM', nav_leads:'Leads & Prospecting', nav_prospecting:'Prospecting', nav_clients:'Network', nav_contacts:'Contacts',
     nav_projects:'Projects', nav_tasks:'Tasks', nav_suppliers:'Suppliers', nav_finance:'Finance',
     nav_documents:'Documents', nav_ai:'AI Assistant', nav_automation:'Automation', nav_settings:'Settings',
-    grp_workspace:'Workspace', grp_sales:'Sales', grp_delivery:'Delivery', grp_ops:'Operations', grp_intel:'Intelligence',
+    grp_workspace:'Workspace', grp_contacts:'Network', grp_sales:'Sales', grp_delivery:'Delivery', grp_ops:'Operations', grp_intel:'Intelligence',
     search_ph:'Search clients, deals, tasks…',
     save:'Save', cancel:'Cancel', saving:'Saving…', add:'Add', export_csv:'Export CSV',
     filter:'Filter', all:'All', view_all:'View all', sign_out:'Sign out',
@@ -181,11 +181,11 @@ const TRANSLATIONS = {
     auth_success:'Account created! Signing you in…',
   },
   fr: {
-    nav_dashboard:'Tableau de bord', nav_inbox:'Boîte de réception', nav_jobs:'Recherche emploi', nav_crm:'CRM', nav_leads:'Leads & Prospection', nav_prospecting:'Leads & Prospection',
-    nav_clients:'Réseaux', nav_projects:'Projets', nav_tasks:'Tâches',
+    nav_dashboard:'Tableau de bord', nav_inbox:'Boîte de réception', nav_jobs:'Recherche emploi', nav_crm:'CRM', nav_leads:'Leads & Prospection', nav_prospecting:'Prospection',
+    nav_clients:'Réseaux', nav_contacts:'Contacts', nav_projects:'Projets', nav_tasks:'Tâches',
     nav_suppliers:'Fournisseurs', nav_finance:'Finance', nav_documents:'Documents',
     nav_ai:'Assistant IA', nav_automation:'Automatisation', nav_settings:'Paramètres',
-    grp_workspace:'Espace de travail', grp_sales:'Ventes', grp_delivery:'Livraison',
+    grp_workspace:'Espace de travail', grp_contacts:'Réseau', grp_sales:'Ventes', grp_delivery:'Livraison',
     grp_ops:'Opérations', grp_intel:'Intelligence',
     search_ph:'Rechercher clients, deals, tâches…',
     save:'Enregistrer', cancel:'Annuler', saving:'Enregistrement…', add:'Ajouter', export_csv:'Exporter CSV',

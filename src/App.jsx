@@ -6,7 +6,7 @@ import { AppDataProvider, useAppData } from './contexts/AppDataContext';
 import AuthScreen from './auth/AuthScreen';
 import Dashboard from './views/Dashboard';
 import CRM from './views/CRM';
-import Clients from './views/Clients';
+import Contacts from './views/Contacts';
 import Prospecting from './views/Prospecting';
 import Projects from './views/Projects';
 import Finance from './views/Finance';
@@ -16,15 +16,14 @@ import Inbox from './views/Inbox';
 import Jobs from './views/Jobs';
 
 const NAV_DEF = [
-  { group: 'grp_workspace', items: [{ id: 'dashboard', icon: 'grid' }, { id: 'inbox', icon: 'mail' }] },
+  { group: 'grp_workspace', items: [{ id: 'dashboard', icon: 'grid' }, { id: 'inbox', icon: 'mail' }, { id: 'tasks', icon: 'check' }] },
+  { group: 'grp_contacts', items: [{ id: 'contacts', icon: 'users' }] },
   { group: 'grp_sales', items: [
-    { id: 'crm', icon: 'users' },
-    { id: 'prospecting', icon: 'target' },
-    { id: 'clients', icon: 'briefcase' },
+    { id: 'crm', icon: 'target' },
+    { id: 'prospecting', icon: 'bolt' },
   ]},
   { group: 'grp_delivery', items: [
     { id: 'projects', icon: 'kanban' },
-    { id: 'tasks', icon: 'check' },
     { id: 'suppliers', icon: 'truck' },
   ]},
   { group: 'grp_ops', items: [
@@ -39,7 +38,7 @@ const NAV_DEF = [
 ];
 
 const VIEWS = {
-  dashboard: Dashboard, inbox: Inbox, crm: CRM, prospecting: Prospecting, clients: Clients,
+  dashboard: Dashboard, inbox: Inbox, contacts: Contacts, crm: CRM, prospecting: Prospecting,
   projects: Projects, tasks: Tasks, suppliers: Suppliers, finance: Finance, documents: Documents,
   jobs: Jobs, ai: AiAssistant, automation: Automation, settings: Settings,
 };
@@ -91,7 +90,7 @@ function SearchDropdown({ query, clients, deals, prospects, tasks, onNavigate, t
 }
 
 function App({ user, onLogout }) {
-  const { deals = [], prospects = [], clients = [], tasks = [] } = useAppData();
+  const { deals = [], prospects = [], clients = [], tasks = [], contacts = [] } = useAppData();
   const t = useT();
   const [tweaks, setTweaks] = useState(() => {
     try { return JSON.parse(localStorage.getItem('ao_tweaks') || 'null') || TWEAK_DEFAULTS; } catch { return TWEAK_DEFAULTS; }
@@ -134,7 +133,7 @@ function App({ user, onLogout }) {
     items: g.items.map(it => {
       if (it.id === 'crm') return { ...it, badge: deals.filter(d => !['Won', 'Lost'].includes(d.stage)).length || undefined };
       if (it.id === 'prospecting') return { ...it, badge: prospects.length || undefined };
-      if (it.id === 'clients') return { ...it, badge: clients.length || undefined };
+      if (it.id === 'contacts') return { ...it, badge: contacts?.length || undefined };
       return it;
     })
   }));

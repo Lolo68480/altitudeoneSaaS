@@ -232,15 +232,15 @@ function SetRow({ label, desc, children }) {
 }
 
 const DATA_SECTIONS = [
-  { id: 'clients',         label: 'Réseaux',       desc: 'Contacts & notes de suivi',       tables: ['contact_notes','clients'] },
-  { id: 'deals',           label: 'CRM / Leads',   desc: 'Pipeline commercial',              tables: ['deals'] },
-  { id: 'prospects',       label: 'Prospection',   desc: 'Prospects & campagnes',            tables: ['prospects','campaigns'] },
-  { id: 'projects',        label: 'Projets',        desc: 'Projets & kanban',                 tables: ['projects'] },
-  { id: 'tasks',           label: 'Tâches',         desc: 'Toutes les tâches',                tables: ['tasks'] },
-  { id: 'documents',       label: 'Documents',      desc: 'Documents & fichiers',             tables: ['documents'] },
-  { id: 'finance',         label: 'Finance',        desc: 'Factures & dépenses',              tables: ['finance'] },
-  { id: 'suppliers',       label: 'Fournisseurs',   desc: 'Carnet de fournisseurs',           tables: ['suppliers'] },
-  { id: 'jobs',            label: 'Candidatures',   desc: 'Suivi de recherche d\'emploi',    tables: ['job_applications'] },
+  { id: 'contacts',        label: 'Contacts',       desc: 'Réseau pro & perso + historique',  tables: ['contact_logs','contacts'] },
+  { id: 'deals',           label: 'CRM / Leads',    desc: 'Pipeline commercial',              tables: ['deals'] },
+  { id: 'prospects',       label: 'Prospection',    desc: 'Prospects & campagnes',            tables: ['prospects','campaigns'] },
+  { id: 'projects',        label: 'Projets',         desc: 'Projets & kanban',                 tables: ['projects'] },
+  { id: 'tasks',           label: 'Tâches',          desc: 'Toutes les tâches',                tables: ['tasks'] },
+  { id: 'documents',       label: 'Documents',       desc: 'Documents & fichiers',             tables: ['documents'] },
+  { id: 'finance',         label: 'Finance',         desc: 'Factures & dépenses',              tables: ['finance'] },
+  { id: 'suppliers',       label: 'Fournisseurs',    desc: 'Carnet de fournisseurs',           tables: ['suppliers'] },
+  { id: 'jobs',            label: 'Candidatures',    desc: "Suivi de recherche d'emploi",      tables: ['job_applications'] },
 ];
 
 function DangerZone({ userId, refetch }) {

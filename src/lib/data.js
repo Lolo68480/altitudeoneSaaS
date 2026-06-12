@@ -128,7 +128,8 @@ export const CLIENT_TIMELINE = [
 ];
 
 export async function dbFetchAll(db, userId) {
-  const [cl, de, pr, ca, pj, ta, do_, fi, su, ja] = await Promise.all([
+  const [co, cl, de, pr, ca, pj, ta, do_, fi, su, ja] = await Promise.all([
+    db.from('contacts').select('*').eq('user_id', userId).order('created_at'),
     db.from('clients').select('*').eq('user_id', userId).order('created_at'),
     db.from('deals').select('*').eq('user_id', userId).order('created_at'),
     db.from('prospects').select('*').eq('user_id', userId).order('created_at'),
@@ -143,6 +144,7 @@ export async function dbFetchAll(db, userId) {
   const mapDeal = d => ({ ...d, lastTouch: d.last_touch });
   const mapProject = p => ({ ...p, col: p.col || 'To Do', tags: p.tags || [], sub: p.sub || [0, 0] });
   return {
+    contacts: co.data || [],
     clients: cl.data || [],
     deals: (de.data || []).map(mapDeal),
     prospects: pr.data || [],

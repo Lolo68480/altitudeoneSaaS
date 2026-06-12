@@ -369,3 +369,5 @@ a { color: inherit; text-decoration: none; }
   50% { opacity: .7; transform: scale(.92); }
 }
 .email-row:hover .email-del-btn { opacity: 1 !important; }
+.contact-del-btn { opacity: 0; transition: opacity .15s; }
+div:hover > .contact-del-btn { opacity: 1 !important; }

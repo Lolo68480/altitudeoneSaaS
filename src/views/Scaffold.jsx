@@ -7,10 +7,43 @@ import { PageHead, Pill, Money, StatTile } from '../components/Shared';
 import { NewSupplierModal, NewTaskModal, NewDocumentModal } from '../components/Modals';
 import { fmtEUR, PRIO } from '../lib/data';
 
+function EditSupplierModal({ supplier, onClose, onSaved }) {
+  const t = useT();
+  const [f, setF] = useState({ name: supplier.name||'', category: supplier.category||'', location: supplier.location||'', email: supplier.email||'', rating: supplier.rating||'', spend: supplier.spend||'', status: supplier.status||'Active' });
+  const [saving, setSaving] = useState(false);
+  const up = k => e => setF(p => ({ ...p, [k]: e.target.value }));
+  const submit = async (e) => {
+    e.preventDefault(); setSaving(true);
+    await db.from('suppliers').update({ name: f.name, category: f.category||null, location: f.location||null, email: f.email||null, rating: parseFloat(f.rating)||null, spend: parseFloat(f.spend)||0, status: f.status }).eq('id', supplier.id);
+    onSaved();
+  };
+  const L = ({ label, children }) => <div style={{ display:'flex', flexDirection:'column', gap:5 }}><label style={{ fontSize:11, fontWeight:700, color:'var(--tx-3)', textTransform:'uppercase', letterSpacing:'.06em' }}>{label}</label>{children}</div>;
+  const R = ({ children }) => <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>{children}</div>;
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex:400, display:'grid', placeItems:'center', padding:16 }}>
+      <div onClick={onClose} style={{ position:'absolute', inset:0, background:'rgba(0,0,0,.6)', backdropFilter:'blur(4px)' }} />
+      <div className="card" style={{ position:'relative', width:500, maxWidth:'100%', boxShadow:'var(--shadow-lg)', animation:'fadeUp .22s var(--ease)' }}>
+        <div className="card-head"><h3 style={{ fontSize:15 }}>Modifier le fournisseur</h3><div className="right"><button className="icon-btn" onClick={onClose}><I.x size={16}/></button></div></div>
+        <form onSubmit={submit}>
+          <div className="card-pad" style={{ display:'flex', flexDirection:'column', gap:13 }}>
+            <L label={t('f_company')}><input className="set-input" value={f.name} onChange={up('name')} required autoFocus /></L>
+            <R><L label={t('f_category')}><input className="set-input" value={f.category} onChange={up('category')} /></L><L label={t('f_location')}><input className="set-input" value={f.location} onChange={up('location')} /></L></R>
+            <R><L label={t('f_email')}><input className="set-input" type="email" value={f.email} onChange={up('email')} /></L>
+              <L label={t('f_status')}><select className="set-input" value={f.status} onChange={up('status')}><option value="Preferred">{t('f_preferred')}</option><option value="Active">{t('f_active')}</option><option value="Trial">{t('f_trial')}</option><option value="Inactive">{t('f_inactive')}</option></select></L></R>
+            <R><L label={t('f_rating')}><input className="set-input" type="number" min="0" max="5" step="0.1" value={f.rating} onChange={up('rating')} /></L><L label={t('f_spend')}><input className="set-input" type="number" value={f.spend} onChange={up('spend')} /></L></R>
+            <div className="row gap8" style={{ marginTop:4 }}><span className="spacer" /><button type="button" className="btn" onClick={onClose}>{t('cancel')}</button><button type="submit" className="btn primary" disabled={saving}>{saving ? t('saving') : t('save')}</button></div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export function Suppliers() {
   const { suppliers: dbSuppliers = [], refetch } = useAppData();
   const t = useT();
   const [addOpen, setAddOpen] = useState(false);
+  const [editSupplier, setEditSupplier] = useState(null);
   const stColors = { Preferred: 'green', Active: 'blue', Trial: 'amber', Inactive: 'gray' };
   const total = dbSuppliers.reduce((s, x) => s + (x.spend || 0), 0);
   const avgRating = dbSuppliers.length ? (dbSuppliers.reduce((s, x) => s + (x.rating || 0), 0) / dbSuppliers.length).toFixed(1) : '—';
@@ -60,7 +93,10 @@ export function Suppliers() {
                   <td><span className="row gap6"><I.star size={12} style={{ color: 'var(--amber)' }} /><span className="num">{s.rating || '—'}</span></span></td>
                   <td><Pill kind={stColors[s.status] || 'blue'} text={s.status || 'Active'} /></td>
                   <td style={{ textAlign: 'right' }}>{s.spend ? <Money v={s.spend} /> : <span className="muted">—</span>}</td>
-                  <td><button className="icon-btn" style={{ width: 28, height: 28, color: 'var(--tx-4)' }} onClick={() => deleteSupplier(s)}><I.trash size={14} /></button></td>
+                  <td className="row gap6">
+                    <button className="icon-btn" style={{ width: 28, height: 28 }} onClick={() => setEditSupplier(s)}><I.edit size={13} /></button>
+                    <button className="icon-btn" style={{ width: 28, height: 28, color: 'var(--tx-4)' }} onClick={() => deleteSupplier(s)}><I.trash size={14} /></button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -68,6 +104,54 @@ export function Suppliers() {
         </div>
       )}
       {addOpen && <NewSupplierModal onClose={() => setAddOpen(false)} />}
+      {editSupplier && <EditSupplierModal supplier={editSupplier} onClose={() => setEditSupplier(null)} onSaved={async () => { setEditSupplier(null); await refetch(); }} />}
+    </div>
+  );
+}
+
+function EditTaskModal({ task, onClose, onSaved }) {
+  const t = useT();
+  const [f, setF] = useState({ title: task.title||'', description: task.client||'', prio: task.prio||'Medium', due_group: task.due_group||'Today' });
+  const [saving, setSaving] = useState(false);
+  const up = k => e => setF(p => ({ ...p, [k]: e.target.value }));
+  const submit = async (e) => {
+    e.preventDefault(); setSaving(true);
+    await db.from('tasks').update({ title: f.title, client: f.description||null, prio: f.prio, due_group: f.due_group }).eq('id', task.id);
+    onSaved();
+  };
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex:400, display:'grid', placeItems:'center', padding:16 }}>
+      <div onClick={onClose} style={{ position:'absolute', inset:0, background:'rgba(0,0,0,.6)', backdropFilter:'blur(4px)' }} />
+      <div className="card" style={{ position:'relative', width:460, maxWidth:'100%', boxShadow:'var(--shadow-lg)', animation:'fadeUp .22s var(--ease)' }}>
+        <div className="card-head"><h3 style={{ fontSize:15 }}>Modifier la tâche</h3><div className="right"><button className="icon-btn" onClick={onClose}><I.x size={16}/></button></div></div>
+        <form onSubmit={submit}>
+          <div className="card-pad" style={{ display:'flex', flexDirection:'column', gap:13 }}>
+            <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+              <label style={{ fontSize:11, fontWeight:700, color:'var(--tx-3)', textTransform:'uppercase', letterSpacing:'.06em' }}>{t('f_title')} <span style={{ color:'var(--red)' }}>*</span></label>
+              <input className="set-input" value={f.title} onChange={up('title')} required autoFocus />
+            </div>
+            <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+              <label style={{ fontSize:11, fontWeight:700, color:'var(--tx-3)', textTransform:'uppercase', letterSpacing:'.06em' }}>Description</label>
+              <textarea className="set-input" value={f.description} onChange={up('description')} rows={2} style={{ resize:'vertical' }} />
+            </div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+              <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+                <label style={{ fontSize:11, fontWeight:700, color:'var(--tx-3)', textTransform:'uppercase', letterSpacing:'.06em' }}>{t('f_prio')}</label>
+                <select className="set-input" value={f.prio} onChange={up('prio')}>
+                  <option value="High">{t('f_prio_high')}</option><option value="Medium">{t('f_prio_med')}</option><option value="Low">{t('f_prio_low')}</option>
+                </select>
+              </div>
+              <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+                <label style={{ fontSize:11, fontWeight:700, color:'var(--tx-3)', textTransform:'uppercase', letterSpacing:'.06em' }}>{t('f_due')}</label>
+                <select className="set-input" value={f.due_group} onChange={up('due_group')}>
+                  <option value="Today">{t('f_today')}</option><option value="Tomorrow">{t('f_tomorrow')}</option><option value="This week">{t('f_week')}</option>
+                </select>
+              </div>
+            </div>
+            <div className="row gap8" style={{ marginTop:4 }}><span className="spacer" /><button type="button" className="btn" onClick={onClose}>{t('cancel')}</button><button type="submit" className="btn primary" disabled={saving}>{saving ? t('saving') : t('save')}</button></div>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
@@ -77,6 +161,7 @@ export function Tasks() {
   const t = useT();
   const [localDone, setLocalDone] = useState({});
   const [addOpen, setAddOpen] = useState(false);
+  const [editTask, setEditTask] = useState(null);
   const [filter, setFilter] = useState('Pending');
   const [showFilter, setShowFilter] = useState(false);
 
@@ -144,6 +229,7 @@ export function Tasks() {
                     <span style={{ fontSize: 13.5, fontWeight: 500, flex: 1, textDecoration: isDone ? 'line-through' : 'none', color: isDone ? 'var(--tx-4)' : 'var(--tx)' }}>{tk.title}</span>
                     {tk.client && <span className="pill gray" style={{ fontSize: 11 }}>{tk.client}</span>}
                     <Pill kind={PRIO[tk.prio]} text={tk.prio} />
+                    <button className="icon-btn" style={{ width: 24, height: 24 }} onClick={() => setEditTask(tk)}><I.edit size={13} /></button>
                     <button className="icon-btn" style={{ width: 24, height: 24, color: 'var(--tx-4)' }} onClick={() => deleteTask(tk)}><I.trash size={13} /></button>
                   </div>
                 );
@@ -154,6 +240,7 @@ export function Tasks() {
         {groups.length === 0 && <div style={{ textAlign: 'center', padding: 60, color: 'var(--tx-4)', fontSize: 13 }}>{t('tasks_no_tasks')}</div>}
       </div>
       {addOpen && <NewTaskModal onClose={() => setAddOpen(false)} />}
+      {editTask && <EditTaskModal task={editTask} onClose={() => setEditTask(null)} onSaved={async () => { setEditTask(null); await refetch(); }} />}
     </div>
   );
 }

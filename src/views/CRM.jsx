@@ -7,6 +7,37 @@ import { PageHead, Pill, Money } from '../components/Shared';
 import { NewDealModal } from '../components/Modals';
 import { fmtEUR, STATUS_META, PIPELINE_STAGES } from '../lib/data';
 
+function EditDealModal({ deal, onClose, onSaved, t }) {
+  const [f, setF] = useState({ company: deal.company||'', contact: deal.contact||'', email: deal.email||'', phone: deal.phone||'', value: deal.value||'', stage: deal.stage||'New Lead', industry: deal.industry||'', prob: deal.prob||10 });
+  const [saving, setSaving] = useState(false);
+  const up = k => e => setF(p => ({ ...p, [k]: e.target.value }));
+  const submit = async (e) => {
+    e.preventDefault(); setSaving(true);
+    await db.from('deals').update({ company: f.company, contact: f.contact||null, email: f.email||null, phone: f.phone||null, value: parseFloat(f.value)||0, stage: f.stage, industry: f.industry||null, prob: parseInt(f.prob)||0 }).eq('id', deal.id);
+    onSaved();
+  };
+  const L = ({ label, children }) => <div style={{ display:'flex', flexDirection:'column', gap:5 }}><label style={{ fontSize:11, fontWeight:700, color:'var(--tx-3)', textTransform:'uppercase', letterSpacing:'.06em' }}>{label}</label>{children}</div>;
+  const R = ({ children }) => <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>{children}</div>;
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex:400, display:'grid', placeItems:'center', padding:16 }}>
+      <div onClick={onClose} style={{ position:'absolute', inset:0, background:'rgba(0,0,0,.6)', backdropFilter:'blur(4px)' }} />
+      <div className="card" style={{ position:'relative', width:500, maxWidth:'100%', boxShadow:'var(--shadow-lg)', animation:'fadeUp .22s var(--ease)' }}>
+        <div className="card-head"><h3 style={{ fontSize:15 }}>Modifier le deal</h3><div className="right"><button className="icon-btn" onClick={onClose}><I.x size={16}/></button></div></div>
+        <form onSubmit={submit}>
+          <div className="card-pad" style={{ display:'flex', flexDirection:'column', gap:13 }}>
+            <R><L label={t('crm_company')}><input className="set-input" value={f.company} onChange={up('company')} required autoFocus /></L><L label={t('crm_contact')}><input className="set-input" value={f.contact} onChange={up('contact')} /></L></R>
+            <R><L label={t('f_email')}><input className="set-input" type="email" value={f.email} onChange={up('email')} /></L><L label={t('f_phone')}><input className="set-input" type="tel" value={f.phone} onChange={up('phone')} /></L></R>
+            <R><L label={t('crm_deal_value')}><input className="set-input" type="number" value={f.value} onChange={up('value')} /></L>
+              <L label={t('crm_stage')}><select className="set-input" value={f.stage} onChange={up('stage')}>{['New Lead','Qualified','Proposal Sent','Negotiation','Won','Lost'].map(s => <option key={s} value={s}>{s}</option>)}</select></L></R>
+            <R><L label={t('crm_industry')}><input className="set-input" value={f.industry} onChange={up('industry')} /></L><L label={t('crm_win_prob') + ' %'}><input className="set-input" type="number" min="0" max="100" value={f.prob} onChange={up('prob')} /></L></R>
+            <div className="row gap8" style={{ marginTop:4 }}><span className="spacer" /><button type="button" className="btn" onClick={onClose}>{t('cancel')}</button><button type="submit" className="btn primary" disabled={saving}>{saving ? t('saving') : t('save')}</button></div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function DealDrawer({ deal, onClose, onDelete, t }) {
   const emailHref = deal.email ? 'mailto:' + deal.email : null;
   const telHref = deal.phone ? 'tel:' + deal.phone : null;
@@ -24,6 +55,7 @@ function DealDrawer({ deal, onClose, onDelete, t }) {
           <div className="kpi-ico" style={{ width: 36, height: 36, background: 'var(--acc-soft)', color: 'var(--acc-2)', fontWeight: 700, fontSize: 14 }}>{deal.company[0]}</div>
           <div><h3 style={{ fontSize: 15 }}>{deal.company}</h3><div className="sub">{deal.industry || t('crm_stage')}</div></div>
           <div className="right">
+            <button className="icon-btn" onClick={() => onEdit(deal)}><I.edit size={16} /></button>
             <button className="icon-btn" style={{ color: 'var(--red)' }} onClick={() => onDelete(deal)} title={t('delete_confirm')}><I.trash size={16} /></button>
             <button className="icon-btn" onClick={onClose}><I.x size={16} /></button>
           </div>
@@ -63,6 +95,7 @@ export default function CRM() {
   const [over, setOver] = useState(null);
   const [view, setView] = useState('Pipeline');
   const [sel, setSel] = useState(null);
+  const [editDeal, setEditDeal] = useState(null);
   const [addOpen, setAddOpen] = useState(false);
   const [stageFilter, setStageFilter] = useState('All');
   const [showFilter, setShowFilter] = useState(false);
@@ -193,7 +226,8 @@ export default function CRM() {
         </div>
       )}
 
-      {sel && <DealDrawer deal={sel} onClose={() => setSel(null)} onDelete={deleteDeal} t={t} />}
+      {sel && <DealDrawer deal={sel} onClose={() => setSel(null)} onDelete={deleteDeal} onEdit={(d) => { setSel(null); setEditDeal(d); }} t={t} />}
+      {editDeal && <EditDealModal deal={editDeal} onClose={() => setEditDeal(null)} onSaved={async () => { setEditDeal(null); await refetch(); }} t={t} />}
       {addOpen && <NewDealModal onClose={() => setAddOpen(false)} />}
     </div>
   );

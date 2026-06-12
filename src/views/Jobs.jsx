@@ -44,7 +44,41 @@ function SqlSetupBanner() {
   );
 }
 
-function JobDrawer({ job, onClose, onDelete, t, statusLabel, STATUS_COLOR, refetch }) {
+function EditJobModal({ job, onClose, onSaved, t }) {
+  const today = new Date().toISOString().split('T')[0];
+  const [f, setF] = useState({ company: job.company||'', position: job.position||'', location: job.location||'', platform: job.platform||'LinkedIn', date_applied: job.date_applied||today, status: job.status||'Applied', salary_min: job.salary_min||'', salary_max: job.salary_max||'', url: job.url||'', contact: job.contact||'' });
+  const [saving, setSaving] = useState(false);
+  const up = k => e => setF(p => ({ ...p, [k]: e.target.value }));
+  const submit = async (e) => {
+    e.preventDefault(); setSaving(true);
+    await db.from('job_applications').update({ company: f.company, position: f.position, location: f.location||null, platform: f.platform||null, date_applied: f.date_applied||null, status: f.status, salary_min: parseInt(f.salary_min)||null, salary_max: parseInt(f.salary_max)||null, url: f.url||null, contact: f.contact||null }).eq('id', job.id);
+    onSaved();
+  };
+  const L = ({ label, children }) => <div style={{ display:'flex', flexDirection:'column', gap:5 }}><label style={{ fontSize:11, fontWeight:700, color:'var(--tx-3)', textTransform:'uppercase', letterSpacing:'.06em' }}>{label}</label>{children}</div>;
+  const R = ({ children }) => <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>{children}</div>;
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex:400, display:'grid', placeItems:'center', padding:16 }}>
+      <div onClick={onClose} style={{ position:'absolute', inset:0, background:'rgba(0,0,0,.6)', backdropFilter:'blur(4px)' }} />
+      <div className="card" style={{ position:'relative', width:520, maxWidth:'100%', maxHeight:'90vh', overflow:'auto', boxShadow:'var(--shadow-lg)', animation:'fadeUp .22s var(--ease)' }}>
+        <div className="card-head"><h3 style={{ fontSize:15 }}>Modifier la candidature</h3><div className="right"><button className="icon-btn" onClick={onClose}><I.x size={16}/></button></div></div>
+        <form onSubmit={submit}>
+          <div className="card-pad" style={{ display:'flex', flexDirection:'column', gap:13 }}>
+            <R><L label={t('jobs_col_company')}><input className="set-input" value={f.company} onChange={up('company')} required autoFocus /></L><L label={t('jobs_col_position')}><input className="set-input" value={f.position} onChange={up('position')} required /></L></R>
+            <R><L label={t('jobs_col_location')}><input className="set-input" value={f.location} onChange={up('location')} /></L>
+              <L label={t('jobs_col_platform')}><select className="set-input" value={f.platform} onChange={up('platform')}>{['LinkedIn','Indeed','APEC','France Travail','HelloWork','Direct','Email','Référence','Autre'].map(p => <option key={p}>{p}</option>)}</select></L></R>
+            <R><L label={t('jobs_col_date')}><input className="set-input" type="date" value={f.date_applied} onChange={up('date_applied')} /></L>
+              <L label={t('jobs_col_status')}><select className="set-input" value={f.status} onChange={up('status')}>{['Applied','Interview','Test','Offer','Rejected','Withdrawn','Accepted'].map(s => <option key={s} value={s}>{s}</option>)}</select></L></R>
+            <R><L label={t('jobs_salary_min')}><input className="set-input" type="number" value={f.salary_min} onChange={up('salary_min')} /></L><L label={t('jobs_salary_max')}><input className="set-input" type="number" value={f.salary_max} onChange={up('salary_max')} /></L></R>
+            <R><L label={t('jobs_url')}><input className="set-input" type="url" value={f.url} onChange={up('url')} /></L><L label={t('jobs_contact')}><input className="set-input" value={f.contact} onChange={up('contact')} /></L></R>
+            <div className="row gap8" style={{ marginTop:4 }}><span className="spacer" /><button type="button" className="btn" onClick={onClose}>{t('cancel')}</button><button type="submit" className="btn primary" disabled={saving}>{saving ? t('saving') : t('save')}</button></div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function JobDrawer({ job, onClose, onDelete, onEdit, t, statusLabel, STATUS_COLOR, refetch }) {
   const [status, setStatus] = useState(job.status);
   const [notes, setNotes] = useState(job.notes || '');
   const [saving, setSaving] = useState(false);
@@ -67,6 +101,7 @@ function JobDrawer({ job, onClose, onDelete, t, statusLabel, STATUS_COLOR, refet
             <div className="sub">{job.position}</div>
           </div>
           <div className="right">
+            <button className="icon-btn" onClick={() => onEdit(job)}><I.edit size={15} /></button>
             <button className="icon-btn" style={{ color:'var(--red)' }} onClick={() => { onClose(); onDelete(job); }}><I.trash size={15} /></button>
             <button className="icon-btn" onClick={onClose}><I.x size={16} /></button>
           </div>
@@ -119,6 +154,7 @@ export default function Jobs() {
   const [filter, setFilter] = useState('All');
   const [searchQ, setSearchQ] = useState('');
   const [sel, setSel] = useState(null);
+  const [editJob, setEditJob] = useState(null);
 
   const STATUS_COLOR = { Applied:'blue', Interview:'violet', Test:'amber', Offer:'green', Rejected:'red', Withdrawn:'gray', Accepted:'green' };
 
@@ -230,7 +266,8 @@ export default function Jobs() {
         </div>
       )}
 
-      {sel && <JobDrawer job={sel} onClose={() => setSel(null)} onDelete={deleteJob} t={t} statusLabel={statusLabel} STATUS_COLOR={STATUS_COLOR} refetch={refetch} />}
+      {sel && <JobDrawer job={sel} onClose={() => setSel(null)} onDelete={deleteJob} onEdit={(j) => { setSel(null); setEditJob(j); }} t={t} statusLabel={statusLabel} STATUS_COLOR={STATUS_COLOR} refetch={refetch} />}
+      {editJob && <EditJobModal job={editJob} onClose={() => setEditJob(null)} onSaved={async () => { setEditJob(null); await refetch(); }} t={t} />}
       {addOpen && <NewJobModal onClose={() => setAddOpen(false)} />}
     </div>
   );

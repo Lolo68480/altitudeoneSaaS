@@ -1,0 +1,33 @@
+name: Build Vite
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'dist/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - run: npm run build
+
+      - name: Commit dist
+        run: |
+          git config user.email "github-actions@github.com"
+          git config user.name "GitHub Actions"
+          git add dist/ -f
+          git diff --staged --quiet || (git commit -m "chore: build dist [skip ci]" && git push)

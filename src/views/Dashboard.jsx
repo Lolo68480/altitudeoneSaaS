@@ -19,7 +19,7 @@ function KpiCard({ icon, iconColor, label, value, note }) {
 }
 
 export default function Dashboard() {
-  const { user, clients = [], deals = [], tasks = [], finance = [] } = useAppData();
+  const { user, contacts = [], deals = [], tasks = [], finance = [] } = useAppData();
   const t = useT();
 
   const hour = new Date().getHours();
@@ -37,7 +37,7 @@ export default function Dashboard() {
   const totalExpenses = finance.filter(f => f.type === 'expense').reduce((s, f) => s + (f.amount || 0), 0);
   const pendingValue = finance.filter(f => f.type === 'invoice' && f.status !== 'Paid').reduce((s, f) => s + (f.amount || 0), 0);
   const wonValue = deals.filter(d => d.stage === 'Won').reduce((s, d) => s + (d.value || 0), 0);
-  const hasAnyData = clients.length || deals.length || tasks.length || finance.length;
+  const hasAnyData = contacts.length || deals.length || tasks.length || finance.length;
 
   return (
     <div className="view">
@@ -61,7 +61,7 @@ export default function Dashboard() {
           <div className="grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 16 }}>
             <KpiCard icon="dollar" iconColor="--green" label={t('dash_rev')} value={paidRevenue ? fmtEUR(paidRevenue, true) : '—'} note={t('dash_paid_inv', { n: finance.filter(f=>f.type==='invoice'&&f.status==='Paid').length })} />
             <KpiCard icon="target" iconColor="--acc" label={t('dash_pipeline')} value={openDeals.length ? fmtEUR(pipelineValue, true) : '—'} note={t('dash_open_d', { n: openDeals.length })} />
-            <KpiCard icon="users" iconColor="--cyan" label={t('dash_clients')} value={clients.length || '—'} note={t('dash_clients_count', { n: clients.length })} />
+            <KpiCard icon="users" iconColor="--cyan" label="Contacts" value={contacts.length || '—'} note={`${contacts.length} dans le réseau`} />
             <KpiCard icon="check" iconColor="--violet" label={t('dash_tasks')} value={pendingTasks.length || '—'} note={t('dash_due_today', { n: todayTasks.length })} />
           </div>
 
@@ -109,45 +109,24 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-            <div className="card">
-              <div className="card-head"><h3>{t('dash_recent_clients')}</h3><div className="right"><button className="btn ghost sm" onClick={() => { location.hash = 'clients'; }}>{t('view_all')}</button></div></div>
-              {clients.length === 0 ? (
-                <div className="card-pad" style={{ color: 'var(--tx-4)', fontSize: 13, textAlign: 'center', padding: 32 }}>{t('cli_no_clients')}</div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  {clients.slice(0, 5).map((c, i) => (
-                    <div key={c.id} className="row gap12" style={{ padding: '12px 16px', borderBottom: i < Math.min(clients.length, 5) - 1 ? '1px solid var(--line)' : 'none' }}>
-                      <div className="kpi-ico" style={{ width: 32, height: 32, background: 'var(--panel-3)', color: 'var(--tx)', fontWeight: 700, fontSize: 12, flex: 'none' }}>{c.company[0]}</div>
-                      <div style={{ minWidth: 0, flex: 1 }}>
-                        <div style={{ fontWeight: 600, fontSize: 13.5 }}>{c.company}</div>
-                        <div className="muted" style={{ fontSize: 11.5 }}>{c.industry || t('no_industry')} · {fmtEUR(c.mrr, true)}/mo</div>
-                      </div>
-                      <span style={{ width: 8, height: 8, borderRadius: 50, flex: 'none', background: c.health === 'good' ? 'var(--green)' : c.health === 'watch' ? 'var(--amber)' : 'var(--red)' }} />
+          <div className="card">
+            <div className="card-head"><h3>{t('dash_upcoming')}</h3><span className="sub">{pendingTasks.length}</span><div className="right"><button className="btn ghost sm" onClick={() => { location.hash = 'tasks'; }}>{t('view_all')}</button></div></div>
+            {pendingTasks.length === 0 ? (
+              <div className="card-pad" style={{ color: 'var(--tx-4)', fontSize: 13, textAlign: 'center', padding: 32 }}>{t('dash_all_caught')}</div>
+            ) : (
+              <div className="card-pad" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 4 }}>
+                {pendingTasks.slice(0, 8).map(task => (
+                  <div key={task.id} className="row gap10" style={{ padding: '8px 4px' }}>
+                    <span style={{ width: 16, height: 16, borderRadius: 5, border: '1.6px solid var(--line-strong)', flex: 'none' }} />
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{task.title}</div>
+                      <div className="muted" style={{ fontSize: 11.5 }}>{task.due_group}</div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="card">
-              <div className="card-head"><h3>{t('dash_upcoming')}</h3><span className="sub">{pendingTasks.length}</span><div className="right"><button className="btn ghost sm" onClick={() => { location.hash = 'tasks'; }}>{t('view_all')}</button></div></div>
-              {pendingTasks.length === 0 ? (
-                <div className="card-pad" style={{ color: 'var(--tx-4)', fontSize: 13, textAlign: 'center', padding: 32 }}>{t('dash_all_caught')}</div>
-              ) : (
-                <div className="card-pad" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  {pendingTasks.slice(0, 6).map(task => (
-                    <div key={task.id} className="row gap10" style={{ padding: '8px 4px' }}>
-                      <span style={{ width: 16, height: 16, borderRadius: 5, border: '1.6px solid var(--line-strong)', flex: 'none' }} />
-                      <div style={{ minWidth: 0, flex: 1 }}>
-                        <div style={{ fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{task.title}</div>
-                        <div className="muted" style={{ fontSize: 11.5 }}>{task.client || t('no_client')} · {task.due_group}</div>
-                      </div>
-                      <Pill kind={PRIO[task.prio]} text={task.prio} />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                    <Pill kind={PRIO[task.prio]} text={task.prio} />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </>
       )}

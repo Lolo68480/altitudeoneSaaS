@@ -231,11 +231,31 @@ function SetRow({ label, desc, children }) {
   return <div className="row gap16"><div style={{ flex: 1 }}><div style={{ fontWeight: 550, fontSize: 13.5 }}>{label}</div>{desc && <div className="muted" style={{ fontSize: 12 }}>{desc}</div>}</div>{children}</div>;
 }
 
+async function clearAllData(db, userId, refetch, setCleaning) {
+  if (!confirm('Supprimer TOUTES les données ? Cette action est irréversible.')) return;
+  setCleaning(true);
+  await Promise.all([
+    db.from('clients').delete().eq('user_id', userId),
+    db.from('deals').delete().eq('user_id', userId),
+    db.from('prospects').delete().eq('user_id', userId),
+    db.from('campaigns').delete().eq('user_id', userId),
+    db.from('projects').delete().eq('user_id', userId),
+    db.from('tasks').delete().eq('user_id', userId),
+    db.from('documents').delete().eq('user_id', userId),
+    db.from('finance').delete().eq('user_id', userId),
+    db.from('suppliers').delete().eq('user_id', userId),
+    db.from('job_applications').delete().eq('user_id', userId),
+  ]);
+  await refetch();
+  setCleaning(false);
+}
+
 export function Settings() {
-  const { user } = useAppData();
+  const { user, refetch } = useAppData();
   const t = useT();
   const { lang, setLang } = useLang();
   const [aiKey, setAiKey] = useState(() => localStorage.getItem('ao_ai_key') || '');
+  const [cleaning, setCleaning] = useState(false);
   const [keySaved, setKeySaved] = useState(false);
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
   const workspaceName = user?.user_metadata?.workspace_name || 'My Workspace';
@@ -310,6 +330,19 @@ export function Settings() {
 
       <div className="card card-pad" style={{ fontSize: 12.5, color: 'var(--tx-3)' }}>
         <I.bolt size={14} style={{ color: 'var(--acc-2)', verticalAlign: '-2px' }} /> {t('set_tip')} <strong style={{ color: 'var(--tx-2)' }}>{t('set_tweaks')}</strong> {t('set_tip2')}
+      </div>
+
+      <div className="card" style={{ marginBottom: 16, border: '1px solid rgba(251,113,133,.25)' }}>
+        <div className="card-head"><h3 style={{ color: 'var(--red)' }}>Zone dangereuse</h3></div>
+        <div className="card-pad">
+          <SetRow label="Effacer toutes les données" desc="Supprime tous les clients, deals, tâches, projets, prospects, documents et candidatures de ton compte. Irréversible.">
+            <button className="btn sm" style={{ borderColor: 'var(--red)', color: 'var(--red)' }}
+              onClick={() => clearAllData(db, user.id, refetch, setCleaning)}
+              disabled={cleaning}>
+              {cleaning ? 'Suppression…' : 'Tout effacer'}
+            </button>
+          </SetRow>
+        </div>
       </div>
     </div>
   );

@@ -306,13 +306,22 @@ export function NewSupplierModal({ onClose }) {
   const [f, setF] = useState({ name: '', category: '', location: '', email: '', rating: '', spend: '', status: 'Active' });
   const [saving, setSaving] = useState(false);
   const up = k => e => setF(p => ({ ...p, [k]: e.target.value }));
+  const [errMsg, setErrMsg] = useState('');
   const onSubmit = async e => {
-    e.preventDefault(); setSaving(true);
-    await db.from('suppliers').insert({ user_id: user.id, name: f.name, category: f.category||null, location: f.location||null, email: f.email||null, rating: parseFloat(f.rating)||null, spend: parseFloat(f.spend)||0, status: f.status });
+    e.preventDefault(); setSaving(true); setErrMsg('');
+    const { error } = await db.from('suppliers').insert({ user_id: user.id, name: f.name, category: f.category||null, location: f.location||null, email: f.email||null, rating: parseFloat(f.rating)||null, spend: parseFloat(f.spend)||0, status: f.status });
+    if (error) {
+      const msg = error.message || '';
+      if (msg.includes('schema cache') || msg.includes('table')) setErrMsg('Table "suppliers" manquante dans la base de données. Contacte le support ou relance la migration SQL.');
+      else if (msg.includes('column')) setErrMsg('Colonne manquante dans la table suppliers. Relance la migration SQL.');
+      else setErrMsg('Erreur lors de l\'enregistrement : ' + msg);
+      setSaving(false); return;
+    }
     await refetch(); onClose();
   };
   return (
     <Modal title={t('m_new_supplier')} onClose={onClose} onSubmit={onSubmit} submitting={saving}>
+      {errMsg && <div style={{ background:'rgba(251,113,133,.12)', color:'var(--red)', border:'1px solid rgba(251,113,133,.4)', borderRadius:8, padding:'10px 14px', fontSize:12.5 }}>{errMsg}</div>}
       <MField label={t('f_company')} required><input className="set-input" value={f.name} onChange={up('name')} required autoFocus /></MField>
       <MRow>
         <MField label={t('f_category')}><input className="set-input" value={f.category} onChange={up('category')} /></MField>

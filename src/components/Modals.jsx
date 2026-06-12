@@ -49,14 +49,17 @@ export function NewClientModal({ onClose }) {
   const t = useT();
   const [f, setF] = useState({ company: '', contact: '', industry: '', website: '', email: '', phone: '', mrr: '', health: 'good', since: String(new Date().getFullYear()) });
   const [saving, setSaving] = useState(false);
+  const [errMsg, setErrMsg] = useState('');
   const up = k => e => setF(p => ({ ...p, [k]: e.target.value }));
   const onSubmit = async e => {
-    e.preventDefault(); setSaving(true);
-    await db.from('clients').insert({ user_id: user.id, company: f.company, contact: f.contact||null, industry: f.industry||null, website: f.website||null, email: f.email||null, phone: f.phone||null, mrr: parseFloat(f.mrr)||0, health: f.health, since: f.since, projects: 0, value: 0 });
+    e.preventDefault(); setSaving(true); setErrMsg('');
+    const { error } = await db.from('clients').insert({ user_id: user.id, company: f.company, contact: f.contact||null, industry: f.industry||null, website: f.website||null, email: f.email||null, phone: f.phone||null, mrr: parseFloat(f.mrr)||0, health: f.health, since: f.since, projects: 0, value: 0 });
+    if (error) { setErrMsg(error.message); setSaving(false); return; }
     await refetch(); onClose();
   };
   return (
     <Modal title={t('m_new_client')} onClose={onClose} onSubmit={onSubmit} submitting={saving}>
+      {errMsg && <div style={{ background:'rgba(251,113,133,.12)', color:'var(--red)', border:'1px solid rgba(251,113,133,.4)', borderRadius:8, padding:'10px 14px', fontSize:12.5 }}>{errMsg}</div>}
       <MField label={t('f_company')} required><input className="set-input" value={f.company} onChange={up('company')} required autoFocus /></MField>
       <MRow>
         <MField label={t('f_contact')}><input className="set-input" value={f.contact} onChange={up('contact')} /></MField>

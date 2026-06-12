@@ -2,7 +2,7 @@ import { createContext, useContext } from 'react';
 
 const TRANSLATIONS = {
   en: {
-    nav_dashboard:'Dashboard', nav_inbox:'Inbox', nav_jobs:'Job Search', nav_crm:'CRM', nav_leads:'Leads & Prospecting', nav_prospecting:'Leads & Prospecting', nav_clients:'Clients',
+    nav_dashboard:'Dashboard', nav_inbox:'Inbox', nav_jobs:'Job Search', nav_crm:'CRM', nav_leads:'Leads & Prospecting', nav_prospecting:'Leads & Prospecting', nav_clients:'Network',
     nav_projects:'Projects', nav_tasks:'Tasks', nav_suppliers:'Suppliers', nav_finance:'Finance',
     nav_documents:'Documents', nav_ai:'AI Assistant', nav_automation:'Automation', nav_settings:'Settings',
     grp_workspace:'Workspace', grp_sales:'Sales', grp_delivery:'Delivery', grp_ops:'Operations', grp_intel:'Intelligence',
@@ -182,7 +182,7 @@ const TRANSLATIONS = {
   },
   fr: {
     nav_dashboard:'Tableau de bord', nav_inbox:'Boîte de réception', nav_jobs:'Recherche emploi', nav_crm:'CRM', nav_leads:'Leads & Prospection', nav_prospecting:'Leads & Prospection',
-    nav_clients:'Clients', nav_projects:'Projets', nav_tasks:'Tâches',
+    nav_clients:'Réseaux', nav_projects:'Projets', nav_tasks:'Tâches',
     nav_suppliers:'Fournisseurs', nav_finance:'Finance', nav_documents:'Documents',
     nav_ai:'Assistant IA', nav_automation:'Automatisation', nav_settings:'Paramètres',
     grp_workspace:'Espace de travail', grp_sales:'Ventes', grp_delivery:'Livraison',
@@ -212,7 +212,7 @@ const TRANSLATIONS = {
     crm_no_deals:'Aucun deal. Créez votre premier deal.',
     crm_deal_value:'Valeur du deal',
     cli_sub:'{n} clients actifs · {mrr} MRR',
-    cli_new:'Ajouter un client', cli_all:'Tous les clients',
+    cli_new:'Ajouter un contact', cli_all:'Tous les contacts',
     cli_no_clients:'Aucun client. Ajoutez votre premier client.',
     cli_mrr:'MRR', cli_lifetime:'Valeur totale', cli_active_proj:'Projets actifs',
     cli_health:'Santé', cli_since:'client depuis',
@@ -290,7 +290,7 @@ const TRANSLATIONS = {
     set_language:'Langue', set_lang_sub:"Langue de l'interface",
     set_tip:'Astuce : utilisez le panneau', set_tweaks:'Tweaks', set_tip2:'(en bas à droite) pour changer la mise en page.',
     set_lang_en:'English', set_lang_fr:'Français',
-    m_new_client:'Nouveau client', m_new_deal:'Nouveau deal', m_new_task:'Nouvelle tâche',
+    m_new_client:'Nouveau contact', m_new_deal:'Nouveau deal', m_new_task:'Nouvelle tâche',
     m_new_proj:'Nouvelle tâche projet', m_new_prospect:'Nouveau prospect',
     m_new_campaign:'Nouvelle campagne', m_new_finance:'Nouvelle entrée',
     m_finance_sub:'Facture ou dépense',

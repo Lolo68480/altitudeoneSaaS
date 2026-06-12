@@ -209,6 +209,7 @@ export default function Inbox() {
   const [emailLoading, setEmailLoading] = useState(false);
   const [replyTo, setReplyTo] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [emailLight, setEmailLight] = useState(true);
 
   useEffect(() => {
     localStorage.setItem('ao_inbox_accounts', JSON.stringify(accounts));
@@ -464,7 +465,12 @@ export default function Inbox() {
               <button className="btn sm" onClick={() => { setReplyTo(sel); setComposing(true); }} style={{ flexShrink:0 }}>
                 <I.mail size={13} /> Répondre
               </button>
-              <button className="icon-btn" style={{ color:'var(--red)', marginTop:2, flexShrink:0 }} onClick={() => deleteEmail(sel.uid)} disabled={deleting} title="Supprimer">
+              <button className="icon-btn" title={emailLight ? 'Passer en sombre' : 'Passer en clair'}
+                style={{ flexShrink:0, color: emailLight ? 'var(--tx-3)' : 'var(--acc-2)', background: emailLight ? 'transparent' : 'var(--acc-soft)', borderRadius:7 }}
+                onClick={() => setEmailLight(v => !v)}>
+                {emailLight ? <I.moon size={15} /> : <I.sun size={15} />}
+              </button>
+              <button className="icon-btn" style={{ color:'var(--red)', flexShrink:0 }} onClick={() => deleteEmail(sel.uid)} disabled={deleting} title="Supprimer">
                 <I.trash size={15} />
               </button>
             </div>
@@ -475,12 +481,12 @@ export default function Inbox() {
             ) : sel.error ? (
               <div style={{ padding:20, fontSize:13, color:'var(--red)' }}>{sel.error}</div>
             ) : (
-              <div style={{ flex:1, overflow:'auto' }}>
+              <div style={{ flex:1, overflow:'auto', background: emailLight ? '#fff' : 'var(--bg)' }}>
                 {sel.html ? (
                   <iframe srcDoc={sel.html} sandbox="allow-same-origin" title="email"
-                    style={{ width:'100%', height:'100%', minHeight:500, border:'none', borderRadius:'0 0 14px 0' }} />
+                    style={{ width:'100%', height:'100%', minHeight:500, border:'none', borderRadius:'0 0 14px 0', filter: emailLight ? 'none' : 'invert(1) hue-rotate(180deg)' }} />
                 ) : (
-                  <pre style={{ padding:'16px 20px', fontSize:13, lineHeight:1.7, color:'var(--tx-2)', whiteSpace:'pre-wrap', fontFamily:'var(--font)', margin:0 }}>
+                  <pre style={{ padding:'16px 20px', fontSize:13, lineHeight:1.7, color: emailLight ? '#1a1a1a' : 'var(--tx-2)', whiteSpace:'pre-wrap', fontFamily:'var(--font)', margin:0, background: emailLight ? '#fff' : 'transparent' }}>
                     {sel.text || '(message vide)'}
                   </pre>
                 )}

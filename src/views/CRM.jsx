@@ -7,6 +7,9 @@ import { PageHead, Pill, Money } from '../components/Shared';
 import { NewDealModal } from '../components/Modals';
 import { fmtEUR, STATUS_META, PIPELINE_STAGES } from '../lib/data';
 
+const DL = ({ label, children }) => <div style={{ display:'flex', flexDirection:'column', gap:5 }}><label style={{ fontSize:11, fontWeight:700, color:'var(--tx-3)', textTransform:'uppercase', letterSpacing:'.06em' }}>{label}</label>{children}</div>;
+const DR = ({ children }) => <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>{children}</div>;
+
 function EditDealModal({ deal, onClose, onSaved, t }) {
   const [f, setF] = useState({ company: deal.company||'', contact: deal.contact||'', email: deal.email||'', phone: deal.phone||'', value: deal.value||'', stage: deal.stage||'New Lead', industry: deal.industry||'', prob: deal.prob||10 });
   const [saving, setSaving] = useState(false);
@@ -16,8 +19,6 @@ function EditDealModal({ deal, onClose, onSaved, t }) {
     await db.from('deals').update({ company: f.company, contact: f.contact||null, email: f.email||null, phone: f.phone||null, value: parseFloat(f.value)||0, stage: f.stage, industry: f.industry||null, prob: parseInt(f.prob)||0 }).eq('id', deal.id);
     onSaved();
   };
-  const L = ({ label, children }) => <div style={{ display:'flex', flexDirection:'column', gap:5 }}><label style={{ fontSize:11, fontWeight:700, color:'var(--tx-3)', textTransform:'uppercase', letterSpacing:'.06em' }}>{label}</label>{children}</div>;
-  const R = ({ children }) => <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>{children}</div>;
   return (
     <div style={{ position:'fixed', inset:0, zIndex:400, display:'grid', placeItems:'center', padding:16 }}>
       <div onClick={onClose} style={{ position:'absolute', inset:0, background:'rgba(0,0,0,.6)', backdropFilter:'blur(4px)' }} />
@@ -25,11 +26,11 @@ function EditDealModal({ deal, onClose, onSaved, t }) {
         <div className="card-head"><h3 style={{ fontSize:15 }}>Modifier le deal</h3><div className="right"><button className="icon-btn" onClick={onClose}><I.x size={16}/></button></div></div>
         <form onSubmit={submit}>
           <div className="card-pad" style={{ display:'flex', flexDirection:'column', gap:13 }}>
-            <R><L label={t('crm_company')}><input className="set-input" value={f.company} onChange={up('company')} required autoFocus /></L><L label={t('crm_contact')}><input className="set-input" value={f.contact} onChange={up('contact')} /></L></R>
-            <R><L label={t('f_email')}><input className="set-input" type="email" value={f.email} onChange={up('email')} /></L><L label={t('f_phone')}><input className="set-input" type="tel" value={f.phone} onChange={up('phone')} /></L></R>
-            <R><L label={t('crm_deal_value')}><input className="set-input" type="number" value={f.value} onChange={up('value')} /></L>
-              <L label={t('crm_stage')}><select className="set-input" value={f.stage} onChange={up('stage')}>{['New Lead','Qualified','Proposal Sent','Negotiation','Won','Lost'].map(s => <option key={s} value={s}>{s}</option>)}</select></L></R>
-            <R><L label={t('crm_industry')}><input className="set-input" value={f.industry} onChange={up('industry')} /></L><L label={t('crm_win_prob') + ' %'}><input className="set-input" type="number" min="0" max="100" value={f.prob} onChange={up('prob')} /></L></R>
+            <DR><DL label={t('crm_company')}><input className="set-input" value={f.company} onChange={up('company')} required autoFocus /></DL><DL label={t('crm_contact')}><input className="set-input" value={f.contact} onChange={up('contact')} /></DL></DR>
+            <DR><DL label={t('f_email')}><input className="set-input" type="email" value={f.email} onChange={up('email')} /></DL><DL label={t('f_phone')}><input className="set-input" type="tel" value={f.phone} onChange={up('phone')} /></DL></DR>
+            <DR><DL label={t('crm_deal_value')}><input className="set-input" type="number" value={f.value} onChange={up('value')} /></DL>
+              <DL label={t('crm_stage')}><select className="set-input" value={f.stage} onChange={up('stage')}>{['New Lead','Qualified','Proposal Sent','Negotiation','Won','Lost'].map(s => <option key={s} value={s}>{s}</option>)}</select></DL></DR>
+            <DR><DL label={t('crm_industry')}><input className="set-input" value={f.industry} onChange={up('industry')} /></DL><DL label={t('crm_win_prob') + ' %'}><input className="set-input" type="number" min="0" max="100" value={f.prob} onChange={up('prob')} /></DL></DR>
             <div className="row gap8" style={{ marginTop:4 }}><span className="spacer" /><button type="button" className="btn" onClick={onClose}>{t('cancel')}</button><button type="submit" className="btn primary" disabled={saving}>{saving ? t('saving') : t('save')}</button></div>
           </div>
         </form>

@@ -7,6 +7,14 @@ import { PageHead, Pill } from '../components/Shared';
 import { NewProjectModal } from '../components/Modals';
 import { KANBAN_COLS, PRIO } from '../lib/data';
 
+const PL = ({ label, req, children }) => (
+  <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+    <label style={{ fontSize:11, fontWeight:700, color:'var(--tx-3)', textTransform:'uppercase', letterSpacing:'.06em' }}>{label}{req && <span style={{ color:'var(--red)', marginLeft:2 }}>*</span>}</label>
+    {children}
+  </div>
+);
+const PR = ({ children }) => <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>{children}</div>;
+
 function EditProjectModal({ project, onClose, onSaved }) {
   const t = useT();
   const [f, setF] = useState({ title: project.title||'', client: project.client||'', prio: project.prio||'Medium', col: project.col||'To Do', due: project.due||'', tags: (project.tags||[]).join(', ') });
@@ -18,13 +26,6 @@ function EditProjectModal({ project, onClose, onSaved }) {
     await db.from('projects').update({ title: f.title, client: f.client||null, prio: f.prio, col: f.col, due: f.due||null, tags }).eq('id', project.id);
     onSaved();
   };
-  const L = ({ label, req, children }) => (
-    <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-      <label style={{ fontSize:11, fontWeight:700, color:'var(--tx-3)', textTransform:'uppercase', letterSpacing:'.06em' }}>{label}{req && <span style={{ color:'var(--red)', marginLeft:2 }}>*</span>}</label>
-      {children}
-    </div>
-  );
-  const R = ({ children }) => <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>{children}</div>;
   return (
     <div style={{ position:'fixed', inset:0, zIndex:400, display:'grid', placeItems:'center', padding:16 }}>
       <div onClick={onClose} style={{ position:'absolute', inset:0, background:'rgba(0,0,0,.6)', backdropFilter:'blur(4px)' }} />
@@ -32,24 +33,24 @@ function EditProjectModal({ project, onClose, onSaved }) {
         <div className="card-head"><h3 style={{ fontSize:15 }}>Modifier le projet</h3><div className="right"><button className="icon-btn" onClick={onClose}><I.x size={16}/></button></div></div>
         <form onSubmit={submit}>
           <div className="card-pad" style={{ display:'flex', flexDirection:'column', gap:13 }}>
-            <L label={t('f_title')} req><input className="set-input" value={f.title} onChange={up('title')} required autoFocus /></L>
-            <R>
-              <L label={t('f_client')}><input className="set-input" value={f.client} onChange={up('client')} /></L>
-              <L label={t('f_prio')}>
+            <PL label={t('f_title')} req><input className="set-input" value={f.title} onChange={up('title')} required autoFocus /></PL>
+            <PR>
+              <PL label={t('f_client')}><input className="set-input" value={f.client} onChange={up('client')} /></PL>
+              <PL label={t('f_prio')}>
                 <select className="set-input" value={f.prio} onChange={up('prio')}>
                   <option value="High">{t('f_prio_high')}</option><option value="Medium">{t('f_prio_med')}</option><option value="Low">{t('f_prio_low')}</option>
                 </select>
-              </L>
-            </R>
-            <R>
-              <L label={t('f_col')}>
+              </PL>
+            </PR>
+            <PR>
+              <PL label={t('f_col')}>
                 <select className="set-input" value={f.col} onChange={up('col')}>
                   <option value="To Do">{t('f_todo')}</option><option value="In Progress">{t('f_inprog')}</option><option value="Waiting">{t('f_waiting')}</option><option value="Completed">{t('f_done')}</option>
                 </select>
-              </L>
-              <L label={t('f_due_date')}><input className="set-input" value={f.due} onChange={up('due')} placeholder="Jun 30" /></L>
-            </R>
-            <L label={t('f_tags')}><input className="set-input" value={f.tags} onChange={up('tags')} placeholder="Design, Dev, SEO" /></L>
+              </PL>
+              <PL label={t('f_due_date')}><input className="set-input" value={f.due} onChange={up('due')} placeholder="Jun 30" /></PL>
+            </PR>
+            <PL label={t('f_tags')}><input className="set-input" value={f.tags} onChange={up('tags')} placeholder="Design, Dev, SEO" /></PL>
             <div className="row gap8" style={{ marginTop:4 }}><span className="spacer" /><button type="button" className="btn" onClick={onClose}>{t('cancel')}</button><button type="submit" className="btn primary" disabled={saving}>{saving ? t('saving') : t('save')}</button></div>
           </div>
         </form>

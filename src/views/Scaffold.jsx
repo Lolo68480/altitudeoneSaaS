@@ -7,6 +7,9 @@ import { PageHead, Pill, Money, StatTile } from '../components/Shared';
 import { NewSupplierModal, NewTaskModal, NewDocumentModal } from '../components/Modals';
 import { fmtEUR, PRIO } from '../lib/data';
 
+const SL = ({ label, children }) => <div style={{ display:'flex', flexDirection:'column', gap:5 }}><label style={{ fontSize:11, fontWeight:700, color:'var(--tx-3)', textTransform:'uppercase', letterSpacing:'.06em' }}>{label}</label>{children}</div>;
+const SR = ({ children }) => <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>{children}</div>;
+
 function EditSupplierModal({ supplier, onClose, onSaved }) {
   const t = useT();
   const [f, setF] = useState({ name: supplier.name||'', category: supplier.category||'', location: supplier.location||'', email: supplier.email||'', rating: supplier.rating||'', spend: supplier.spend||'', status: supplier.status||'Active' });
@@ -17,8 +20,6 @@ function EditSupplierModal({ supplier, onClose, onSaved }) {
     await db.from('suppliers').update({ name: f.name, category: f.category||null, location: f.location||null, email: f.email||null, rating: parseFloat(f.rating)||null, spend: parseFloat(f.spend)||0, status: f.status }).eq('id', supplier.id);
     onSaved();
   };
-  const L = ({ label, children }) => <div style={{ display:'flex', flexDirection:'column', gap:5 }}><label style={{ fontSize:11, fontWeight:700, color:'var(--tx-3)', textTransform:'uppercase', letterSpacing:'.06em' }}>{label}</label>{children}</div>;
-  const R = ({ children }) => <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>{children}</div>;
   return (
     <div style={{ position:'fixed', inset:0, zIndex:400, display:'grid', placeItems:'center', padding:16 }}>
       <div onClick={onClose} style={{ position:'absolute', inset:0, background:'rgba(0,0,0,.6)', backdropFilter:'blur(4px)' }} />
@@ -26,11 +27,11 @@ function EditSupplierModal({ supplier, onClose, onSaved }) {
         <div className="card-head"><h3 style={{ fontSize:15 }}>Modifier le fournisseur</h3><div className="right"><button className="icon-btn" onClick={onClose}><I.x size={16}/></button></div></div>
         <form onSubmit={submit}>
           <div className="card-pad" style={{ display:'flex', flexDirection:'column', gap:13 }}>
-            <L label={t('f_company')}><input className="set-input" value={f.name} onChange={up('name')} required autoFocus /></L>
-            <R><L label={t('f_category')}><input className="set-input" value={f.category} onChange={up('category')} /></L><L label={t('f_location')}><input className="set-input" value={f.location} onChange={up('location')} /></L></R>
-            <R><L label={t('f_email')}><input className="set-input" type="email" value={f.email} onChange={up('email')} /></L>
-              <L label={t('f_status')}><select className="set-input" value={f.status} onChange={up('status')}><option value="Preferred">{t('f_preferred')}</option><option value="Active">{t('f_active')}</option><option value="Trial">{t('f_trial')}</option><option value="Inactive">{t('f_inactive')}</option></select></L></R>
-            <R><L label={t('f_rating')}><input className="set-input" type="number" min="0" max="5" step="0.1" value={f.rating} onChange={up('rating')} /></L><L label={t('f_spend')}><input className="set-input" type="number" value={f.spend} onChange={up('spend')} /></L></R>
+            <SL label={t('f_company')}><input className="set-input" value={f.name} onChange={up('name')} required autoFocus /></SL>
+            <SR><SL label={t('f_category')}><input className="set-input" value={f.category} onChange={up('category')} /></SL><SL label={t('f_location')}><input className="set-input" value={f.location} onChange={up('location')} /></SL></SR>
+            <SR><SL label={t('f_email')}><input className="set-input" type="email" value={f.email} onChange={up('email')} /></SL>
+              <SL label={t('f_status')}><select className="set-input" value={f.status} onChange={up('status')}><option value="Preferred">{t('f_preferred')}</option><option value="Active">{t('f_active')}</option><option value="Trial">{t('f_trial')}</option><option value="Inactive">{t('f_inactive')}</option></select></SL></SR>
+            <SR><SL label={t('f_rating')}><input className="set-input" type="number" min="0" max="5" step="0.1" value={f.rating} onChange={up('rating')} /></SL><SL label={t('f_spend')}><input className="set-input" type="number" value={f.spend} onChange={up('spend')} /></SL></SR>
             <div className="row gap8" style={{ marginTop:4 }}><span className="spacer" /><button type="button" className="btn" onClick={onClose}>{t('cancel')}</button><button type="submit" className="btn primary" disabled={saving}>{saving ? t('saving') : t('save')}</button></div>
           </div>
         </form>

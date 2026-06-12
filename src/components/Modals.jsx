@@ -327,33 +327,33 @@ export function NewSupplierModal({ onClose }) {
 export function NewDocumentModal({ onClose }) {
   const { user, refetch } = useAppData();
   const t = useT();
-  const [f, setF] = useState({ name: '', folder: 'Contracts', size: '', modified: "Aujourd'hui" });
+  const [f, setF] = useState({ name: '', folder: 'Contracts', size: '', manualUrl: '' });
   const [file, setFile] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [uploadStatus, setUploadStatus] = useState('');
+  const [uploadErr, setUploadErr] = useState('');
   const up = k => e => setF(p => ({ ...p, [k]: e.target.value }));
 
   const onFileChange = (e) => {
     const sel = e.target.files[0];
     if (!sel) return;
     setFile(sel);
+    setUploadErr('');
     const sizeFmt = sel.size < 1024*1024 ? Math.round(sel.size/1024)+' KB' : (sel.size/1024/1024).toFixed(1)+' MB';
     setF(p => ({ ...p, name: p.name || sel.name, size: sizeFmt }));
   };
 
   const onSubmit = async e => {
-    e.preventDefault(); setSaving(true);
-    let url = null;
+    e.preventDefault(); setSaving(true); setUploadErr('');
+    let url = f.manualUrl.trim() || null;
     if (file) {
-      setUploadStatus(t('doc_uploading'));
       const path = `${user.id}/${Date.now()}_${file.name}`;
       const { error: upErr } = await db.storage.from('documents').upload(path, file);
       if (!upErr) {
         const { data: urlData } = db.storage.from('documents').getPublicUrl(path);
         url = urlData?.publicUrl || null;
-        setUploadStatus('');
       } else {
-        setUploadStatus(t('doc_upload_err'));
+        setUploadErr("Erreur d'upload. Le bucket Supabase Storage n'est peut-être pas configuré. Colle un lien externe à la place.");
+        setSaving(false); return;
       }
     }
     const today = new Date().toLocaleDateString('fr-FR', { day:'numeric', month:'short' });
@@ -364,6 +364,7 @@ export function NewDocumentModal({ onClose }) {
   const folderOpts = [['Contracts','doc_contracts'],['Quotes','doc_quotes'],['Invoices','doc_invoices'],['Certificates','doc_certificates'],['Legal','doc_legal'],['Brand assets','doc_brand']];
   return (
     <Modal title={t('m_new_doc')} onClose={onClose} onSubmit={onSubmit} submitting={saving}>
+      {uploadErr && <div style={{ background:'rgba(251,113,133,.12)', color:'var(--red)', border:'1px solid rgba(251,113,133,.4)', borderRadius:8, padding:'10px 14px', fontSize:12.5 }}>{uploadErr}</div>}
       <MField label={t('doc_file_label')}>
         <div style={{ position:'relative' }}>
           <input type="file" id="doc-file-input" onChange={onFileChange} style={{ display:'none' }} />
@@ -372,8 +373,10 @@ export function NewDocumentModal({ onClose }) {
             <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{file ? file.name : t('doc_file_ph')}</span>
           </label>
         </div>
-        {uploadStatus && <div style={{ fontSize:12, color:'var(--tx-3)', marginTop:4 }}>{uploadStatus}</div>}
-        <div style={{ fontSize:11.5, color:'var(--tx-4)', marginTop:4 }}>{t('doc_storage_note')}</div>
+      </MField>
+      <MField label="Lien externe (Google Drive, Dropbox…)">
+        <input className="set-input" type="url" value={f.manualUrl} onChange={up('manualUrl')} placeholder="https://drive.google.com/…" />
+        <div style={{ fontSize:11.5, color:'var(--tx-4)', marginTop:4 }}>Si pas de fichier joint, colle ici le lien du document pour pouvoir l'ouvrir.</div>
       </MField>
       <MField label={t('f_filename')} required><input className="set-input" value={f.name} onChange={up('name')} required placeholder="Contract.pdf" /></MField>
       <MRow>

@@ -201,13 +201,19 @@ export function Documents() {
             <thead><tr><th>{t('doc_name')}</th><th>{t('doc_folder')}</th><th>{t('doc_size')}</th><th>{t('doc_modified')}</th><th></th></tr></thead>
             <tbody>
               {dbDocs.map((r, i) => (
-                <tr key={r.id || i}>
-                  <td><div className="av-row"><div className="kpi-ico" style={{ width: 28, height: 28, background: 'var(--panel-2)', color: 'var(--tx-2)' }}><I.doc size={14} /></div><span style={{ fontWeight: 500 }}>{r.name}</span></div></td>
+                <tr key={r.id || i} onClick={() => r.url && window.open(r.url, '_blank')} style={{ cursor: r.url ? 'pointer' : 'default' }}>
+                  <td>
+                    <div className="av-row">
+                      <div className="kpi-ico" style={{ width: 28, height: 28, background: 'var(--panel-2)', color: 'var(--tx-2)' }}><I.doc size={14} /></div>
+                      <span style={{ fontWeight: 500 }}>{r.name}</span>
+                      {!r.url && <span style={{ fontSize: 11, color: 'var(--tx-4)', marginLeft: 6 }}>pas de lien</span>}
+                    </div>
+                  </td>
                   <td className="muted">{r.folder || '—'}</td><td className="muted num">{r.size || '—'}</td><td className="muted">{r.modified || '—'}</td>
                   <td style={{ textAlign: 'right' }}>
                     <div style={{ display:'flex', gap:6, justifyContent:'flex-end' }}>
-                      {r.url && <a href={r.url} target="_blank" rel="noopener" className="icon-btn" style={{ width:28, height:28, color:'var(--acc-2)' }} title="Télécharger"><I.download size={14} /></a>}
-                      <button className="icon-btn" style={{ width: 28, height: 28, color: 'var(--tx-4)' }} onClick={() => deleteDoc(r)}><I.trash size={14} /></button>
+                      {r.url && <a href={r.url} target="_blank" rel="noopener" className="icon-btn" style={{ width:28, height:28, color:'var(--acc-2)' }} title="Ouvrir" onClick={e => e.stopPropagation()}><I.globe size={14} /></a>}
+                      <button className="icon-btn" style={{ width: 28, height: 28, color: 'var(--tx-4)' }} onClick={e => { e.stopPropagation(); deleteDoc(r); }}><I.trash size={14} /></button>
                     </div>
                   </td>
                 </tr>

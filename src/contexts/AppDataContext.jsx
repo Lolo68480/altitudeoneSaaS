@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { db } from '../lib/supabase';
-import { dbFetchAll, seedSampleData } from '../lib/data';
+import { dbFetchAll } from '../lib/data';
 import { I } from '../components/Icons';
 
 const AppDataCtx = createContext(null);
@@ -14,7 +14,6 @@ export function AppDataProvider({ user, children }) {
     setLoading(true);
     setError(null);
     try {
-      await seedSampleData(db, user.id);
       const d = await dbFetchAll(db, user.id);
       setData(d);
     } catch (e) {

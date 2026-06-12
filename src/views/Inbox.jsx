@@ -4,6 +4,42 @@ import { useAppData } from '../contexts/AppDataContext';
 import { useT, useLang } from '../contexts/LangContext';
 import { PageHead } from '../components/Shared';
 
+function ConnectModal({ onClose, connProvider, setConnProvider, connEmail, setConnEmail, addAccount, t }) {
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex:300, display:'grid', placeItems:'center', padding:16 }}>
+      <div onClick={onClose} style={{ position:'absolute', inset:0, background:'rgba(0,0,0,.6)', backdropFilter:'blur(4px)' }} />
+      <div className="card" style={{ position:'relative', width:500, maxWidth:'100%', boxShadow:'var(--shadow-lg)', animation:'fadeUp .25s var(--ease)' }}>
+        <div className="card-head">
+          <h3>{t('inbox_add_account')}</h3>
+          <div className="right"><button className="icon-btn" onClick={onClose} type="button"><I.x size={16} /></button></div>
+        </div>
+        <div className="card-pad" style={{ display:'flex', flexDirection:'column', gap:16 }}>
+          <div>
+            <label style={{ fontSize:11.5, fontWeight:600, color:'var(--tx-3)', textTransform:'uppercase', letterSpacing:'.05em', display:'block', marginBottom:8 }}>Provider</label>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
+              {[['gmail','Gmail','#ea4335','G'],['outlook','Outlook','#0078d4','O'],['imap','IMAP','var(--panel-3)','@']].map(([id,label,bg,letter]) => (
+                <div key={id} onClick={() => setConnProvider(id)}
+                  style={{ cursor:'pointer', textAlign:'center', padding:'14px 10px', borderRadius:10, border:`2px solid ${connProvider===id ? 'var(--acc)' : 'var(--line-2)'}`, background: connProvider===id ? 'var(--acc-soft)' : 'var(--panel-2)', transition:'all .12s' }}>
+                  <div style={{ width:36, height:36, borderRadius:10, background:bg, display:'grid', placeItems:'center', margin:'0 auto 8px', color:'#fff', fontWeight:800, fontSize:17 }}>{letter}</div>
+                  <div style={{ fontSize:13, fontWeight:600 }}>{label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label style={{ fontSize:11.5, fontWeight:600, color:'var(--tx-3)', textTransform:'uppercase', letterSpacing:'.05em', display:'block', marginBottom:6 }}>{t('inbox_connect_email_label')}</label>
+            <input className="set-input" type="email" value={connEmail} onChange={e => setConnEmail(e.target.value)} placeholder={t('inbox_connect_email_ph')} autoFocus onKeyDown={e => { if (e.key==='Enter') addAccount(); }} />
+          </div>
+          <div className="row gap8" style={{ justifyContent:'flex-end' }}>
+            <button className="btn" onClick={onClose}>{t('cancel')}</button>
+            <button className="btn primary" onClick={addAccount}>{t('inbox_connect_btn')}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Inbox() {
   const t = useT();
   const { lang } = useLang();
@@ -50,39 +86,6 @@ export default function Inbox() {
     { id:'trash',  icon:'trash', label:t('inbox_folder_trash'),  count:0 },
   ];
 
-  const ConnectModal = () => (
-    <div style={{ position:'fixed', inset:0, zIndex:300, display:'grid', placeItems:'center', padding:16 }}>
-      <div onClick={() => setConnecting(false)} style={{ position:'absolute', inset:0, background:'rgba(0,0,0,.6)', backdropFilter:'blur(4px)' }} />
-      <div className="card" style={{ position:'relative', width:500, maxWidth:'100%', boxShadow:'var(--shadow-lg)', animation:'fadeUp .25s var(--ease)' }}>
-        <div className="card-head">
-          <h3>{t('inbox_add_account')}</h3>
-          <div className="right"><button className="icon-btn" onClick={() => setConnecting(false)} type="button"><I.x size={16} /></button></div>
-        </div>
-        <div className="card-pad" style={{ display:'flex', flexDirection:'column', gap:16 }}>
-          <div>
-            <label style={{ fontSize:11.5, fontWeight:600, color:'var(--tx-3)', textTransform:'uppercase', letterSpacing:'.05em', display:'block', marginBottom:8 }}>Provider</label>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
-              {[['gmail','Gmail','#ea4335','G'],['outlook','Outlook','#0078d4','O'],['imap','IMAP','var(--panel-3)','@']].map(([id,label,bg,letter]) => (
-                <div key={id} onClick={() => setConnProvider(id)}
-                  style={{ cursor:'pointer', textAlign:'center', padding:'14px 10px', borderRadius:10, border:`2px solid ${connProvider===id ? 'var(--acc)' : 'var(--line-2)'}`, background: connProvider===id ? 'var(--acc-soft)' : 'var(--panel-2)', transition:'all .12s' }}>
-                  <div style={{ width:36, height:36, borderRadius:10, background:bg, display:'grid', placeItems:'center', margin:'0 auto 8px', color:'#fff', fontWeight:800, fontSize:17 }}>{letter}</div>
-                  <div style={{ fontSize:13, fontWeight:600 }}>{label}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div>
-            <label style={{ fontSize:11.5, fontWeight:600, color:'var(--tx-3)', textTransform:'uppercase', letterSpacing:'.05em', display:'block', marginBottom:6 }}>{t('inbox_connect_email_label')}</label>
-            <input className="set-input" type="email" value={connEmail} onChange={e => setConnEmail(e.target.value)} placeholder={t('inbox_connect_email_ph')} autoFocus onKeyDown={e => { if (e.key==='Enter') addAccount(); }} />
-          </div>
-          <div className="row gap8" style={{ justifyContent:'flex-end' }}>
-            <button className="btn" onClick={() => setConnecting(false)}>{t('cancel')}</button>
-            <button className="btn primary" onClick={addAccount}>{t('inbox_connect_btn')}</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 
   /* ── Aucun compte connecté ── */
   if (accounts.length === 0 && !connecting) {
@@ -107,7 +110,7 @@ export default function Inbox() {
             </div>
           </div>
         </div>
-        <ConnectModal />
+        {connecting && <ConnectModal onClose={() => setConnecting(false)} connProvider={connProvider} setConnProvider={setConnProvider} connEmail={connEmail} setConnEmail={setConnEmail} addAccount={addAccount} t={t} />}
       </div>
     );
   }
@@ -166,7 +169,7 @@ export default function Inbox() {
           </div>
         </div>
       </div>
-      {connecting && <ConnectModal />}
+      {connecting && <ConnectModal onClose={() => setConnecting(false)} connProvider={connProvider} setConnProvider={setConnProvider} connEmail={connEmail} setConnEmail={setConnEmail} addAccount={addAccount} t={t} />}
     </div>
   );
 }

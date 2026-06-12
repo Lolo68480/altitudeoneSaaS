@@ -44,50 +44,51 @@ function MRow({ children }) {
   return <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>{children}</div>;
 }
 
+const CONTACT_CATS = ['Pro', 'Perso', 'Famille', 'Business', 'Associé', 'Autre'];
+
 export function NewClientModal({ onClose }) {
   const { user, refetch } = useAppData();
-  const t = useT();
-  const [f, setF] = useState({ company: '', contact: '', industry: '', website: '', email: '', phone: '', mrr: '', health: 'good', since: String(new Date().getFullYear()) });
+  const [f, setF] = useState({ name: '', profession: '', category: 'Pro', email: '', phone: '', linkedin: '' });
   const [saving, setSaving] = useState(false);
   const [errMsg, setErrMsg] = useState('');
   const up = k => e => setF(p => ({ ...p, [k]: e.target.value }));
   const onSubmit = async e => {
     e.preventDefault(); setSaving(true); setErrMsg('');
-    const { error } = await db.from('clients').insert({ user_id: user.id, company: f.company, contact: f.contact||null, industry: f.industry||null, website: f.website||null, email: f.email||null, phone: f.phone||null, mrr: parseFloat(f.mrr)||0, health: f.health, since: f.since, projects: 0, value: 0 });
+    const { error } = await db.from('clients').insert({
+      user_id: user.id,
+      company: f.name,
+      contact: f.profession || null,
+      industry: f.category || null,
+      website: f.linkedin || null,
+      email: f.email || null,
+      phone: f.phone || null,
+      mrr: 0, health: 'good', since: String(new Date().getFullYear()), projects: 0, value: 0
+    });
     if (error) {
       const msg = error.message || '';
-      if (msg.includes('schema cache') || msg.includes('column')) setErrMsg('Colonne manquante dans la base de données. Lance ce SQL dans Supabase → SQL Editor : ALTER TABLE clients ADD COLUMN IF NOT EXISTS email text; ALTER TABLE clients ADD COLUMN IF NOT EXISTS phone text;');
-      else if (msg.includes('permission') || msg.includes('policy')) setErrMsg('Permission refusée. Vérifie les politiques RLS dans Supabase.');
-      else if (msg.includes('duplicate') || msg.includes('unique')) setErrMsg('Ce contact existe déjà.');
-      else setErrMsg('Erreur lors de l\'enregistrement : ' + msg);
+      if (msg.includes('permission') || msg.includes('policy')) setErrMsg('Permission refusée.');
+      else setErrMsg('Erreur : ' + msg);
       setSaving(false); return;
     }
     await refetch(); onClose();
   };
   return (
-    <Modal title={t('m_new_client')} onClose={onClose} onSubmit={onSubmit} submitting={saving}>
+    <Modal title="Ajouter un contact" onClose={onClose} onSubmit={onSubmit} submitting={saving}>
       {errMsg && <div style={{ background:'rgba(251,113,133,.12)', color:'var(--red)', border:'1px solid rgba(251,113,133,.4)', borderRadius:8, padding:'10px 14px', fontSize:12.5 }}>{errMsg}</div>}
-      <MField label={t('f_company')} required><input className="set-input" value={f.company} onChange={up('company')} required autoFocus /></MField>
+      <MField label="NOM COMPLET" required><input className="set-input" value={f.name} onChange={up('name')} required autoFocus placeholder="Marie Dupont" /></MField>
       <MRow>
-        <MField label={t('f_contact')}><input className="set-input" value={f.contact} onChange={up('contact')} /></MField>
-        <MField label={t('f_industry')}><input className="set-input" value={f.industry} onChange={up('industry')} /></MField>
-      </MRow>
-      <MRow>
-        <MField label={t('f_email')}><input className="set-input" type="email" value={f.email} onChange={up('email')} /></MField>
-        <MField label={t('f_phone')}><input className="set-input" type="tel" value={f.phone} onChange={up('phone')} /></MField>
-      </MRow>
-      <MRow>
-        <MField label={t('f_website')}><input className="set-input" value={f.website} onChange={up('website')} placeholder="example.com" /></MField>
-        <MField label={t('f_mrr')}><input className="set-input" type="number" value={f.mrr} onChange={up('mrr')} placeholder="0" /></MField>
-      </MRow>
-      <MRow>
-        <MField label={t('f_health')}>
-          <select className="set-input" value={f.health} onChange={up('health')}>
-            <option value="good">{t('f_health_good')}</option><option value="watch">{t('f_health_watch')}</option><option value="risk">{t('f_health_risk')}</option>
+        <MField label="PROFESSION / POSTE"><input className="set-input" value={f.profession} onChange={up('profession')} placeholder="Designer, Comptable…" /></MField>
+        <MField label="CATÉGORIE">
+          <select className="set-input" value={f.category} onChange={up('category')}>
+            {CONTACT_CATS.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </MField>
-        <MField label={t('f_since')}><input className="set-input" value={f.since} onChange={up('since')} /></MField>
       </MRow>
+      <MRow>
+        <MField label="EMAIL"><input className="set-input" type="email" value={f.email} onChange={up('email')} /></MField>
+        <MField label="TÉLÉPHONE"><input className="set-input" type="tel" value={f.phone} onChange={up('phone')} /></MField>
+      </MRow>
+      <MField label="LINKEDIN / SITE WEB"><input className="set-input" value={f.linkedin} onChange={up('linkedin')} placeholder="linkedin.com/in/…" /></MField>
     </Modal>
   );
 }

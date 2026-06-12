@@ -231,23 +231,87 @@ function SetRow({ label, desc, children }) {
   return <div className="row gap16"><div style={{ flex: 1 }}><div style={{ fontWeight: 550, fontSize: 13.5 }}>{label}</div>{desc && <div className="muted" style={{ fontSize: 12 }}>{desc}</div>}</div>{children}</div>;
 }
 
-async function clearAllData(db, userId, refetch, setCleaning) {
-  if (!confirm('Supprimer TOUTES les données ? Cette action est irréversible.')) return;
-  setCleaning(true);
-  await Promise.all([
-    db.from('clients').delete().eq('user_id', userId),
-    db.from('deals').delete().eq('user_id', userId),
-    db.from('prospects').delete().eq('user_id', userId),
-    db.from('campaigns').delete().eq('user_id', userId),
-    db.from('projects').delete().eq('user_id', userId),
-    db.from('tasks').delete().eq('user_id', userId),
-    db.from('documents').delete().eq('user_id', userId),
-    db.from('finance').delete().eq('user_id', userId),
-    db.from('suppliers').delete().eq('user_id', userId),
-    db.from('job_applications').delete().eq('user_id', userId),
-  ]);
-  await refetch();
-  setCleaning(false);
+const DATA_SECTIONS = [
+  { id: 'clients',         label: 'Réseaux',       desc: 'Contacts & notes de suivi',       tables: ['contact_notes','clients'] },
+  { id: 'deals',           label: 'CRM / Leads',   desc: 'Pipeline commercial',              tables: ['deals'] },
+  { id: 'prospects',       label: 'Prospection',   desc: 'Prospects & campagnes',            tables: ['prospects','campaigns'] },
+  { id: 'projects',        label: 'Projets',        desc: 'Projets & kanban',                 tables: ['projects'] },
+  { id: 'tasks',           label: 'Tâches',         desc: 'Toutes les tâches',                tables: ['tasks'] },
+  { id: 'documents',       label: 'Documents',      desc: 'Documents & fichiers',             tables: ['documents'] },
+  { id: 'finance',         label: 'Finance',        desc: 'Factures & dépenses',              tables: ['finance'] },
+  { id: 'suppliers',       label: 'Fournisseurs',   desc: 'Carnet de fournisseurs',           tables: ['suppliers'] },
+  { id: 'jobs',            label: 'Candidatures',   desc: 'Suivi de recherche d\'emploi',    tables: ['job_applications'] },
+];
+
+function DangerZone({ userId, refetch }) {
+  const [selected, setSelected] = useState({});
+  const [deleting, setDeleting] = useState(false);
+  const [done, setDone] = useState([]);
+
+  const toggle = (id) => setSelected(p => ({ ...p, [id]: !p[id] }));
+  const toggleAll = () => {
+    const allChecked = DATA_SECTIONS.every(s => selected[s.id]);
+    const next = {};
+    DATA_SECTIONS.forEach(s => { next[s.id] = !allChecked; });
+    setSelected(next);
+  };
+
+  const toDelete = DATA_SECTIONS.filter(s => selected[s.id]);
+  const allChecked = DATA_SECTIONS.every(s => selected[s.id]);
+  const someChecked = toDelete.length > 0;
+
+  const handleDelete = async () => {
+    if (!someChecked) return;
+    const names = toDelete.map(s => s.label).join(', ');
+    if (!confirm(`Supprimer les données de : ${names} ?\n\nCette action est irréversible.`)) return;
+    setDeleting(true);
+    const ops = [];
+    toDelete.forEach(s => s.tables.forEach(t => ops.push(db.from(t).delete().eq('user_id', userId))));
+    await Promise.all(ops);
+    setDone(toDelete.map(s => s.id));
+    setSelected({});
+    await refetch();
+    setDeleting(false);
+    setTimeout(() => setDone([]), 3000);
+  };
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:0 }}>
+      {/* Sélectionner tout */}
+      <div className="row gap10" style={{ padding:'12px 16px', borderBottom:'1px solid var(--line)' }}>
+        <input type="checkbox" id="sel-all" checked={allChecked} onChange={toggleAll}
+          style={{ width:15, height:15, cursor:'pointer', accentColor:'var(--red)' }} />
+        <label htmlFor="sel-all" style={{ fontSize:12.5, fontWeight:600, color:'var(--tx-3)', cursor:'pointer', userSelect:'none' }}>
+          Tout sélectionner / désélectionner
+        </label>
+      </div>
+      {/* Lignes par section */}
+      {DATA_SECTIONS.map(s => (
+        <div key={s.id} className="row gap12" onClick={() => toggle(s.id)}
+          style={{ padding:'11px 16px', borderBottom:'1px solid var(--line)', cursor:'pointer',
+            background: selected[s.id] ? 'rgba(251,113,133,.07)' : 'transparent',
+            transition:'background .15s' }}>
+          <input type="checkbox" checked={!!selected[s.id]} onChange={() => toggle(s.id)}
+            onClick={e => e.stopPropagation()}
+            style={{ width:15, height:15, cursor:'pointer', accentColor:'var(--red)', flexShrink:0 }} />
+          <div style={{ flex:1 }}>
+            <div style={{ fontWeight:600, fontSize:13, color: selected[s.id] ? 'var(--red)' : 'var(--tx)' }}>{s.label}</div>
+            <div className="muted" style={{ fontSize:11.5 }}>{s.desc}</div>
+          </div>
+          {done.includes(s.id) && <span style={{ fontSize:11, color:'var(--green)', fontWeight:600 }}>Supprimé ✓</span>}
+        </div>
+      ))}
+      {/* Bouton supprimer */}
+      <div style={{ padding:'14px 16px' }}>
+        <button className="btn" disabled={!someChecked || deleting}
+          onClick={handleDelete}
+          style={{ borderColor:'var(--red)', color:'var(--red)', opacity: someChecked ? 1 : .4, width:'100%', justifyContent:'center' }}>
+          <I.trash size={13} />
+          {deleting ? 'Suppression…' : someChecked ? `Supprimer ${toDelete.length} section${toDelete.length > 1 ? 's' : ''}` : 'Sélectionne des sections à supprimer'}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 function IntegModal({ integ, onClose }) {
@@ -294,7 +358,6 @@ export function Settings() {
   const t = useT();
   const { lang, setLang } = useLang();
   const [aiKey, setAiKey] = useState(() => localStorage.getItem('ao_ai_key') || '');
-  const [cleaning, setCleaning] = useState(false);
   const [keySaved, setKeySaved] = useState(false);
   const [integModal, setIntegModal] = useState(null);
   const [, forceUpdate] = useState(0);
@@ -403,17 +466,9 @@ export function Settings() {
         <I.bolt size={14} style={{ color: 'var(--acc-2)', verticalAlign: '-2px' }} /> {t('set_tip')} <strong style={{ color: 'var(--tx-2)' }}>{t('set_tweaks')}</strong> {t('set_tip2')}
       </div>
 
-      <div className="card" style={{ marginBottom: 16, border: '1px solid rgba(251,113,133,.25)' }}>
-        <div className="card-head"><h3 style={{ color: 'var(--red)' }}>Zone dangereuse</h3></div>
-        <div className="card-pad">
-          <SetRow label="Effacer toutes les données" desc="Supprime tous les clients, deals, tâches, projets, prospects, documents et candidatures de ton compte. Irréversible.">
-            <button className="btn sm" style={{ borderColor: 'var(--red)', color: 'var(--red)' }}
-              onClick={() => clearAllData(db, user.id, refetch, setCleaning)}
-              disabled={cleaning}>
-              {cleaning ? 'Suppression…' : 'Tout effacer'}
-            </button>
-          </SetRow>
-        </div>
+      <div className="card" style={{ marginBottom: 16, border: '1px solid rgba(251,113,133,.25)', overflow:'hidden' }}>
+        <div className="card-head"><h3 style={{ color: 'var(--red)' }}>Zone dangereuse</h3><div className="sub">Coche les sections à supprimer puis confirme. Irréversible.</div></div>
+        <DangerZone userId={user.id} refetch={refetch} />
       </div>
 
       {integModal && <IntegModal integ={INTEG_DEFS[integModal]} onClose={() => { setIntegModal(null); forceUpdate(n=>n+1); }} />}

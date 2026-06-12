@@ -2,7 +2,7 @@ name: Build Vite
 
 on:
   push:
-    branches: [main]
+    branches: [main, master]
     paths-ignore:
       - 'dist/**'
 

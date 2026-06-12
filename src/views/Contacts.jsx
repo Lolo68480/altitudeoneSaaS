@@ -110,11 +110,89 @@ function AddContactModal({ onClose, onSaved }) {
   );
 }
 
+function EditContactModal({ contact, onClose, onSaved }) {
+  const [f, setF] = useState({
+    first_name: contact.first_name || '',
+    last_name:  contact.last_name  || '',
+    profession: contact.profession || '',
+    company:    contact.company    || '',
+    email:      contact.email      || '',
+    phone:      contact.phone      || '',
+    linkedin:   contact.linkedin   || '',
+    category:   contact.category   || 'Pro',
+    notes:      contact.notes      || '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
+  const up = k => e => setF(p => ({ ...p, [k]: e.target.value }));
+
+  const submit = async (e) => {
+    e.preventDefault(); setSaving(true); setErr('');
+    const { error } = await db.from('contacts').update({
+      first_name: f.first_name.trim(),
+      last_name:  f.last_name.trim()  || null,
+      profession: f.profession.trim() || null,
+      company:    f.company.trim()    || null,
+      email:      f.email.trim()      || null,
+      phone:      f.phone.trim()      || null,
+      linkedin:   f.linkedin.trim()   || null,
+      category:   f.category,
+      notes:      f.notes.trim()      || null,
+    }).eq('id', contact.id);
+    if (error) { setErr(error.message); setSaving(false); return; }
+    onSaved();
+  };
+
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex:400, display:'grid', placeItems:'center', padding:16 }}>
+      <div onClick={onClose} style={{ position:'absolute', inset:0, background:'rgba(0,0,0,.6)', backdropFilter:'blur(4px)' }} />
+      <div className="card" style={{ position:'relative', width:560, maxWidth:'100%', maxHeight:'90vh', overflow:'auto', boxShadow:'var(--shadow-lg)', animation:'fadeUp .22s var(--ease)' }}>
+        <div className="card-head">
+          <h3 style={{ fontSize:15 }}>Modifier le contact</h3>
+          <div className="right"><button className="icon-btn" onClick={onClose}><I.x size={16}/></button></div>
+        </div>
+        <form onSubmit={submit}>
+          <div className="card-pad" style={{ display:'flex', flexDirection:'column', gap:14 }}>
+            {err && <div style={{ background:'rgba(251,113,133,.12)', color:'var(--red)', border:'1px solid rgba(251,113,133,.4)', borderRadius:8, padding:'10px 14px', fontSize:12.5 }}>{err}</div>}
+            <CRow>
+              <CField label="Prénom" req><input className="set-input" value={f.first_name} onChange={up('first_name')} required autoFocus /></CField>
+              <CField label="Nom"><input className="set-input" value={f.last_name} onChange={up('last_name')} /></CField>
+            </CRow>
+            <CRow>
+              <CField label="Profession / Poste"><input className="set-input" value={f.profession} onChange={up('profession')} placeholder="Designer, Dev, Comptable…" /></CField>
+              <CField label="Entreprise"><input className="set-input" value={f.company} onChange={up('company')} /></CField>
+            </CRow>
+            <CRow>
+              <CField label="Email"><input className="set-input" type="email" value={f.email} onChange={up('email')} /></CField>
+              <CField label="Téléphone"><input className="set-input" type="tel" value={f.phone} onChange={up('phone')} /></CField>
+            </CRow>
+            <CRow>
+              <CField label="LinkedIn / Site web"><input className="set-input" value={f.linkedin} onChange={up('linkedin')} placeholder="linkedin.com/in/…" /></CField>
+              <CField label="Catégorie">
+                <select className="set-input" value={f.category} onChange={up('category')}>
+                  {CATS.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </CField>
+            </CRow>
+            <CField label="Notes rapides"><textarea className="set-input" value={f.notes} onChange={up('notes')} rows={2} style={{ resize:'vertical' }} /></CField>
+            <div className="row gap8" style={{ marginTop:4 }}>
+              <span className="spacer" />
+              <button type="button" className="btn" onClick={onClose}>Annuler</button>
+              <button type="submit" className="btn primary" disabled={saving}>{saving ? 'Enregistrement…' : 'Enregistrer'}</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function ContactDetail({ contact, user, onDelete, onRefresh }) {
   const [logs, setLogs] = useState([]);
   const [text, setText] = useState('');
   const [type, setType] = useState('note');
   const [saving, setSaving] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [compose, setCompose] = useState(false);
   const [composeSub, setComposeSub] = useState('');
   const [composeBody, setComposeBody] = useState('');
@@ -196,7 +274,8 @@ function ContactDetail({ contact, user, onDelete, onRefresh }) {
               {webHref && <a href={webHref} target="_blank" rel="noopener" className="btn sm" style={{ textDecoration:'none' }}><I.link size={13}/> LinkedIn</a>}
             </div>
           </div>
-          <button className="icon-btn" style={{ color:'var(--tx-4)', width:30, height:30 }} onClick={onDelete}><I.trash size={15}/></button>
+          <button className="icon-btn" style={{ width:30, height:30 }} onClick={() => setEditing(true)} title="Modifier"><I.edit size={15}/></button>
+          <button className="icon-btn" style={{ color:'var(--tx-4)', width:30, height:30 }} onClick={onDelete} title="Supprimer"><I.trash size={15}/></button>
         </div>
 
         {/* Compose inline */}
@@ -271,6 +350,7 @@ function ContactDetail({ contact, user, onDelete, onRefresh }) {
           }
         </div>
       </div>
+      {editing && <EditContactModal contact={contact} onClose={() => setEditing(false)} onSaved={async () => { setEditing(false); await onRefresh(); }} />}
     </div>
   );
 }

@@ -201,18 +201,31 @@ export default function Inbox() {
   const [connProvider, setConnProvider] = useState('gmail');
   const [folder, setFolder] = useState('INBOX');
 
+  const [folderMap, setFolderMap] = useState({ inbox:'INBOX', sent:null, drafts:null, trash:null });
   const [emails, setEmails] = useState([]);
   const [emailsLoading, setEmailsLoading] = useState(false);
   const [emailsError, setEmailsError] = useState('');
   const [sel, setSel] = useState(null);
   const [emailLoading, setEmailLoading] = useState(false);
   const [replyTo, setReplyTo] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('ao_inbox_accounts', JSON.stringify(accounts));
   }, [accounts]);
 
   const activeAcc = accounts.find(a => a.id === activeId);
+
+  const fetchFolders = async (acc) => {
+    try {
+      const res = await fetch('/api/list-folders', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imap_host: acc.imap_host, imap_port: acc.imap_port, imap_user: acc.email, imap_pass: acc.pass }),
+      });
+      const data = await res.json();
+      if (res.ok && data.mapped) setFolderMap(data.mapped);
+    } catch {}
+  };
 
   const fetchEmails = async (acc, f) => {
     const account = acc || activeAcc;
@@ -255,11 +268,25 @@ export default function Inbox() {
     }
   };
 
+  const deleteEmail = async (uid) => {
+    if (!activeAcc || !confirm('Supprimer ce mail ?')) return;
+    setDeleting(true);
+    try {
+      await fetch('/api/delete-email', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid, imap_host: activeAcc.imap_host, imap_port: activeAcc.imap_port, imap_user: activeAcc.email, imap_pass: activeAcc.pass, folder, trash_folder: folderMap.trash }),
+      });
+      setEmails(prev => prev.filter(e => e.uid !== uid));
+      if (sel?.uid === uid) setSel(null);
+    } catch {}
+    setDeleting(false);
+  };
+
   const addAccount = (acc) => {
     setAccounts(a => [...a, acc]);
     setActiveId(acc.id);
     setConnecting(false);
-    fetchEmails(acc, folder);
+    fetchFolders(acc).then(() => fetchEmails(acc, folder));
   };
 
   const removeAccount = (id) => {
@@ -271,7 +298,7 @@ export default function Inbox() {
   const switchAccount = (id) => {
     setActiveId(id);
     const acc = accounts.find(a => a.id === id);
-    if (acc) fetchEmails(acc, folder);
+    if (acc) { fetchFolders(acc); fetchEmails(acc, folder); }
   };
 
   const switchFolder = (f) => {
@@ -279,15 +306,19 @@ export default function Inbox() {
     if (activeAcc) fetchEmails(activeAcc, f);
   };
 
-  useEffect(() => { if (activeAcc) fetchEmails(activeAcc, folder); }, []);
+  useEffect(() => {
+    if (activeAcc) {
+      fetchFolders(activeAcc).then(() => fetchEmails(activeAcc, folder));
+    }
+  }, []);
 
   const providerColor = { gmail:'#ea4335', outlook:'#0078d4', imap:'var(--tx-3)' };
   const providerLetter = { gmail:'G', outlook:'O', imap:'@' };
   const FOLDERS = [
-    { id:'INBOX',  icon:'mail',  label: lang==='fr' ? 'Boîte de réception' : 'Inbox' },
-    { id:'[Gmail]/Sent Mail', icon:'send',  label: lang==='fr' ? 'Envoyés' : 'Sent' },
-    { id:'[Gmail]/Drafts', icon:'doc', label: lang==='fr' ? 'Brouillons' : 'Drafts' },
-    { id:'[Gmail]/Trash', icon:'trash', label: lang==='fr' ? 'Corbeille' : 'Trash' },
+    { id: folderMap.inbox  || 'INBOX',              icon:'mail',  label: lang==='fr' ? 'Boîte de réception' : 'Inbox' },
+    { id: folderMap.sent   || '[Gmail]/Sent Mail',   icon:'send',  label: lang==='fr' ? 'Envoyés' : 'Sent', disabled: !folderMap.sent },
+    { id: folderMap.drafts || '[Gmail]/Drafts',      icon:'doc',   label: lang==='fr' ? 'Brouillons' : 'Drafts', disabled: !folderMap.drafts },
+    { id: folderMap.trash  || '[Gmail]/Trash',       icon:'trash', label: lang==='fr' ? 'Corbeille' : 'Trash', disabled: !folderMap.trash },
   ];
   const unread = emails.filter(e => !e.seen).length;
 
@@ -392,18 +423,26 @@ export default function Inbox() {
           {!emailsLoading && !emailsError && emails.length > 0 && (
             <div style={{ overflowY:'auto', flex:1 }}>
               {emails.map(email => (
-                <div key={email.uid} onClick={() => viewEmail(email.uid)}
-                  style={{ padding:'11px 14px', borderBottom:'1px solid var(--line)', cursor:'pointer', background: sel?.uid===email.uid ? 'var(--acc-soft)' : 'transparent', transition:'background .1s' }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:3 }}>
-                    {!email.seen && <span style={{ width:7, height:7, borderRadius:50, background:'var(--acc)', flex:'none' }} />}
-                    <span style={{ fontSize:12.5, fontWeight: email.seen ? 400 : 700, color: email.seen ? 'var(--tx-2)' : 'var(--tx)', flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                      {email.from.name || email.from.address}
-                    </span>
-                    <span style={{ fontSize:11, color:'var(--tx-4)', flexShrink:0 }}>{fmtDate(email.date)}</span>
+                <div key={email.uid}
+                  style={{ padding:'11px 14px', borderBottom:'1px solid var(--line)', cursor:'pointer', background: sel?.uid===email.uid ? 'var(--acc-soft)' : 'transparent', transition:'background .1s', position:'relative' }}
+                  className="email-row">
+                  <div onClick={() => viewEmail(email.uid)}>
+                    <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:3 }}>
+                      {!email.seen && <span style={{ width:7, height:7, borderRadius:50, background:'var(--acc)', flex:'none' }} />}
+                      <span style={{ fontSize:12.5, fontWeight: email.seen ? 400 : 700, color: email.seen ? 'var(--tx-2)' : 'var(--tx)', flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                        {email.from.name || email.from.address}
+                      </span>
+                      <span style={{ fontSize:11, color:'var(--tx-4)', flexShrink:0 }}>{fmtDate(email.date)}</span>
+                    </div>
+                    <div style={{ fontSize:12, fontWeight: email.seen ? 400 : 600, color: email.seen ? 'var(--tx-3)' : 'var(--tx-2)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                      {email.subject}
+                    </div>
                   </div>
-                  <div style={{ fontSize:12, fontWeight: email.seen ? 400 : 600, color: email.seen ? 'var(--tx-3)' : 'var(--tx-2)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                    {email.subject}
-                  </div>
+                  <button onClick={e => { e.stopPropagation(); deleteEmail(email.uid); }} disabled={deleting}
+                    style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', color:'var(--tx-4)', cursor:'pointer', padding:'4px 6px', borderRadius:6, opacity:0, transition:'opacity .15s' }}
+                    className="email-del-btn" title="Supprimer">
+                    <I.trash size={13} />
+                  </button>
                 </div>
               ))}
             </div>
@@ -424,6 +463,9 @@ export default function Inbox() {
               </div>
               <button className="btn sm" onClick={() => { setReplyTo(sel); setComposing(true); }} style={{ flexShrink:0 }}>
                 <I.mail size={13} /> Répondre
+              </button>
+              <button className="icon-btn" style={{ color:'var(--red)', marginTop:2, flexShrink:0 }} onClick={() => deleteEmail(sel.uid)} disabled={deleting} title="Supprimer">
+                <I.trash size={15} />
               </button>
             </div>
             {sel.loading ? (

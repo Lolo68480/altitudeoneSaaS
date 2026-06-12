@@ -138,19 +138,19 @@ export function NewDealModal({ onClose }) {
 export function NewTaskModal({ onClose }) {
   const { user, refetch } = useAppData();
   const t = useT();
-  const [f, setF] = useState({ title: '', client: '', prio: 'Medium', due_group: 'Today' });
+  const [f, setF] = useState({ title: '', description: '', prio: 'Medium', due_group: 'Today' });
   const [saving, setSaving] = useState(false);
   const up = k => e => setF(p => ({ ...p, [k]: e.target.value }));
   const onSubmit = async e => {
     e.preventDefault(); setSaving(true);
-    await db.from('tasks').insert({ user_id: user.id, title: f.title, client: f.client||null, prio: f.prio, due_group: f.due_group, done: false });
+    await db.from('tasks').insert({ user_id: user.id, title: f.title, client: f.description||null, prio: f.prio, due_group: f.due_group, done: false });
     await refetch(); onClose();
   };
   return (
     <Modal title={t('m_new_task')} onClose={onClose} onSubmit={onSubmit} submitting={saving}>
       <MField label={t('f_title')} required><input className="set-input" value={f.title} onChange={up('title')} required autoFocus /></MField>
+      <MField label="DESCRIPTION"><textarea className="set-input" value={f.description} onChange={up('description')} rows={2} style={{ resize:'vertical' }} placeholder="Détails, contexte…" /></MField>
       <MRow>
-        <MField label={t('f_client')}><input className="set-input" value={f.client} onChange={up('client')} /></MField>
         <MField label={t('f_prio')}>
           <select className="set-input" value={f.prio} onChange={up('prio')}>
             <option value="High">{t('f_prio_high')}</option><option value="Medium">{t('f_prio_med')}</option><option value="Low">{t('f_prio_low')}</option>

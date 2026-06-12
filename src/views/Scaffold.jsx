@@ -250,6 +250,45 @@ async function clearAllData(db, userId, refetch, setCleaning) {
   setCleaning(false);
 }
 
+function IntegModal({ integ, onClose }) {
+  const lsKey = { tavily:'ao_search_key', n8n:'ao_n8n_url', stripe:'ao_stripe_key', slack:'ao_slack_url' }[integ.id];
+  const [val, setVal] = useState(() => localStorage.getItem(lsKey) || '');
+  const [saved, setSaved] = useState(false);
+  const save = () => { localStorage.setItem(lsKey, val.trim()); setSaved(true); setTimeout(() => { setSaved(false); onClose(); }, 1200); };
+  const disconnect = () => { localStorage.removeItem(lsKey); onClose(); };
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex:300, display:'grid', placeItems:'center', padding:16 }}>
+      <div onClick={onClose} style={{ position:'absolute', inset:0, background:'rgba(0,0,0,.55)', backdropFilter:'blur(3px)' }} />
+      <div className="card" style={{ position:'relative', width:480, maxWidth:'100%', boxShadow:'var(--shadow-lg)', animation:'fadeUp .22s var(--ease)' }}>
+        <div className="card-head">
+          <div className="kpi-ico" style={{ width:36, height:36, background:'var(--acc-soft)', color:'var(--acc-2)', fontWeight:700, fontSize:15 }}>{integ.letter}</div>
+          <div><h3 style={{ fontSize:15 }}>{integ.name}</h3><div className="sub">{integ.desc}</div></div>
+          <div className="right"><button className="icon-btn" onClick={onClose}><I.x size={16} /></button></div>
+        </div>
+        <div className="card-pad" style={{ display:'flex', flexDirection:'column', gap:14 }}>
+          <div style={{ fontSize:12.5, color:'var(--tx-3)', lineHeight:1.6, background:'var(--panel-2)', padding:'10px 12px', borderRadius:8 }}>
+            {integ.help}
+          </div>
+          <div>
+            <label style={{ fontSize:11.5, fontWeight:600, color:'var(--tx-3)', textTransform:'uppercase', letterSpacing:'.05em', display:'block', marginBottom:6 }}>{integ.label}</label>
+            <input className="set-input" type={integ.secret ? 'password' : 'text'} value={val} onChange={e => setVal(e.target.value)}
+              placeholder={integ.ph} autoFocus onKeyDown={e => { if (e.key==='Enter') save(); }}
+              style={{ fontFamily: val && integ.secret ? 'monospace' : 'inherit' }} />
+          </div>
+          <div className="row gap8" style={{ justifyContent:'space-between' }}>
+            {localStorage.getItem(lsKey) && <button className="btn sm" style={{ color:'var(--red)', borderColor:'var(--red)' }} onClick={disconnect}>Déconnecter</button>}
+            <span className="spacer" />
+            <button className="btn" onClick={onClose}>Annuler</button>
+            <button className="btn primary" onClick={save} disabled={!val.trim()}>
+              {saved ? <><I.check2 size={13} /> Enregistré</> : 'Connecter'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function Settings() {
   const { user, refetch } = useAppData();
   const t = useT();
@@ -257,6 +296,8 @@ export function Settings() {
   const [aiKey, setAiKey] = useState(() => localStorage.getItem('ao_ai_key') || '');
   const [cleaning, setCleaning] = useState(false);
   const [keySaved, setKeySaved] = useState(false);
+  const [integModal, setIntegModal] = useState(null);
+  const [, forceUpdate] = useState(0);
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
   const workspaceName = user?.user_metadata?.workspace_name || 'My Workspace';
 
@@ -265,6 +306,25 @@ export function Settings() {
     setKeySaved(true);
     setTimeout(() => setKeySaved(false), 2000);
   };
+
+  const INTEG_DEFS = {
+    tavily: { id:'tavily', name:'Tavily (recherche web)', desc:"Recherche web temps réel pour l'IA", letter:'T', secret:true, label:'Clé API Tavily', ph:'tvly-…', help:'Crée un compte gratuit sur tavily.com (1000 recherches/mois gratuites). Copie ta clé API depuis le dashboard Tavily.' },
+    n8n:    { id:'n8n', name:'n8n', desc:'Workflow automation', letter:'n', secret:false, label:'URL du webhook n8n', ph:'https://ton-instance.n8n.cloud/webhook/…', help:"Entre l'URL de ton webhook n8n. Les automatisations pourront être déclenchées depuis Altitude One." },
+    stripe: { id:'stripe', name:'Stripe', desc:'Paiements & facturation', letter:'S', secret:true, label:'Clé publique Stripe (pk_…)', ph:'pk_live_…', help:"Entre ta clé publique Stripe (commence par pk_). Ne jamais entrer ta clé secrète sk_ ici." },
+    slack:  { id:'slack', name:'Slack', desc:'Notifications', letter:'S', secret:false, label:'URL Incoming Webhook Slack', ph:'https://hooks.slack.com/services/…', help:"Dans Slack : Apps → Incoming Webhooks → Ajouter → Choisir un canal → Copier l'URL du webhook." },
+  };
+
+  const isConnected = (id) => !!localStorage.getItem({ tavily:'ao_search_key', n8n:'ao_n8n_url', stripe:'ao_stripe_key', slack:'ao_slack_url' }[id]);
+
+  const integRows = [
+    ['Supabase', 'Auth & database', true, null],
+    ['Groq / Llama', 'AI assistant — llama-3.1-8b-instant', !!aiKey, null],
+    ['Tavily', 'Recherche web pour l\'IA', isConnected('tavily'), 'tavily'],
+    ['Gmail / IMAP', 'Synchronisation boîte mail', false, 'gmail'],
+    ['n8n', 'Workflow automation', isConnected('n8n'), 'n8n'],
+    ['Stripe', 'Paiements & facturation', isConnected('stripe'), 'stripe'],
+    ['Slack', 'Notifications', isConnected('slack'), 'slack'],
+  ];
 
   return (
     <div className="view" style={{ maxWidth: 760, margin: '0 auto' }}>
@@ -317,18 +377,29 @@ export function Settings() {
       <div className="card" style={{ marginBottom: 16 }}>
         <div className="card-head"><h3>{t('set_integrations')}</h3></div>
         <div className="card-pad" style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {[['Supabase', 'Auth & database', true], ['Groq / Llama', 'AI assistant — free', !!aiKey], ['Gmail / IMAP', 'Email inbox sync', false], ['n8n', 'Workflow automation', false], ['Stripe', 'Payments & invoicing', false], ['Slack', 'Notifications', false]].map((g, i) => (
-            <div key={i} className="row gap12" style={{ padding: '12px 2px', borderBottom: i < 5 ? '1px solid var(--line)' : 'none' }}>
-              <div className="kpi-ico" style={{ width: 34, height: 34, background: 'var(--panel-3)', color: 'var(--tx-2)', fontWeight: 700, fontSize: 13 }}>{g[0][0]}</div>
-              <div><div style={{ fontWeight: 600, fontSize: 13.5 }}>{g[0]}</div><div className="muted" style={{ fontSize: 11.5 }}>{g[1]}</div></div>
+          {integRows.map(([name, desc, connected, integId], i) => (
+            <div key={i} className="row gap12" style={{ padding: '12px 2px', borderBottom: i < integRows.length - 1 ? '1px solid var(--line)' : 'none' }}>
+              <div className="kpi-ico" style={{ width: 34, height: 34, background: 'var(--panel-3)', color: 'var(--tx-2)', fontWeight: 700, fontSize: 13 }}>{name[0]}</div>
+              <div><div style={{ fontWeight: 600, fontSize: 13.5 }}>{name}</div><div className="muted" style={{ fontSize: 11.5 }}>{desc}</div></div>
               <span className="spacer" />
-              {g[2] ? <span className="pill green"><span style={{ width: 6, height: 6, borderRadius: 50, background: 'var(--green)', display: 'inline-block', marginRight: 5 }} />{t('set_connected')}</span> : <button className="btn sm">{t('set_connect')}</button>}
+              {connected
+                ? <span className="pill green" style={{ cursor: integId && integId !== 'gmail' ? 'pointer' : 'default' }}
+                    onClick={() => integId && integId !== 'gmail' && setIntegModal(integId)}>
+                    <span style={{ width: 6, height: 6, borderRadius: 50, background: 'var(--green)', display: 'inline-block', marginRight: 5 }} />
+                    {t('set_connected')}
+                  </span>
+                : integId === 'gmail'
+                  ? <button className="btn sm" onClick={() => alert('Configure ta boîte mail depuis la section Inbox → Ajouter une boîte')}>{t('set_connect')}</button>
+                  : integId
+                    ? <button className="btn sm" onClick={() => { setIntegModal(integId); forceUpdate(n=>n+1); }}>{t('set_connect')}</button>
+                    : <button className="btn sm" disabled style={{ opacity:.4 }}>{t('set_connect')}</button>
+              }
             </div>
           ))}
         </div>
       </div>
 
-      <div className="card card-pad" style={{ fontSize: 12.5, color: 'var(--tx-3)' }}>
+      <div className="card card-pad" style={{ fontSize: 12.5, color: 'var(--tx-3)', marginBottom: 16 }}>
         <I.bolt size={14} style={{ color: 'var(--acc-2)', verticalAlign: '-2px' }} /> {t('set_tip')} <strong style={{ color: 'var(--tx-2)' }}>{t('set_tweaks')}</strong> {t('set_tip2')}
       </div>
 
@@ -344,6 +415,8 @@ export function Settings() {
           </SetRow>
         </div>
       </div>
+
+      {integModal && <IntegModal integ={INTEG_DEFS[integModal]} onClose={() => { setIntegModal(null); forceUpdate(n=>n+1); }} />}
     </div>
   );
 }

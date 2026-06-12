@@ -80,15 +80,21 @@ export function AiAssistant() {
       return error ? `Error: ${error.message}` : `✅ Prospect "${inp.company}" added.`;
     }
     if (name === 'search_web') {
+      const searchKey = localStorage.getItem('ao_search_key') || '';
+      if (!searchKey) return 'Recherche web non configurée. Ajoute une clé Tavily dans Paramètres → Intégrations.';
       try {
-        const res = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(inp.query)}&format=json&no_html=1&skip_disambig=1&no_redirect=1`);
+        const res = await fetch('https://api.tavily.com/search', {
+          method:'POST',
+          headers: { 'Content-Type':'application/json' },
+          body: JSON.stringify({ api_key: searchKey, query: inp.query, search_depth:'basic', max_results:5 })
+        });
         const data = await res.json();
-        const parts = [];
-        if (data.AbstractText) parts.push(data.AbstractText);
-        (data.RelatedTopics||[]).slice(0,5).forEach(r => { if (r.Text) parts.push('• ' + r.Text.slice(0,200)); });
-        return parts.length ? parts.join('\n') : 'No results found.';
+        if (!res.ok) return `Erreur Tavily: ${data.message || res.status}`;
+        const results = data.results || [];
+        if (!results.length) return 'Aucun résultat trouvé.';
+        return results.map(r => `**${r.title}**\n${r.content?.slice(0,300)}\nSource: ${r.url}`).join('\n\n---\n\n');
       } catch(e) {
-        return 'Web search blocked by CORS. Answering from training knowledge.';
+        return `Erreur recherche: ${e.message}`;
       }
     }
     if (name === 'get_data') {
@@ -99,6 +105,26 @@ export function AiAssistant() {
       return JSON.stringify({ clients:clients.length, deals:deals.length, tasks:tasks.length, prospects:prospects.length });
     }
     return `Unknown tool: ${name}`;
+  };
+
+  const groqCall = async (systemPrompt) => {
+    const searchKey = localStorage.getItem('ao_search_key') || '';
+    const activeTOOLS = searchKey ? TOOLS : TOOLS.filter(t => t.function.name !== 'search_web');
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method:'POST',
+        headers: { 'Content-Type':'application/json', 'Authorization': `Bearer ${apiKey}` },
+        body: JSON.stringify({ model:'llama-3.1-8b-instant', max_tokens:1024, messages:[{ role:'system', content:systemPrompt }, ...apiHistoryRef.current], tools:activeTOOLS, tool_choice:'auto' })
+      });
+      if (resp.status === 429) {
+        const retryAfter = parseInt(resp.headers.get('retry-after') || '8', 10);
+        await new Promise(r => setTimeout(r, retryAfter * 1000));
+        continue;
+      }
+      if (!resp.ok) { const err = await resp.json().catch(() => ({})); throw new Error(err.error?.message || `API error ${resp.status}`); }
+      return resp.json();
+    }
+    throw new Error('Rate limit reached. Attends quelques secondes et réessaie.');
   };
 
   const send = async (text) => {
@@ -116,13 +142,7 @@ export function AiAssistant() {
     try {
       let loop = true;
       while (loop) {
-        const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method:'POST',
-          headers: { 'Content-Type':'application/json', 'Authorization': `Bearer ${apiKey}` },
-          body: JSON.stringify({ model:'llama-3.3-70b-versatile', max_tokens:2048, messages:[{ role:'system', content:systemPrompt }, ...apiHistoryRef.current], tools:TOOLS, tool_choice:'auto' })
-        });
-        if (!resp.ok) { const err = await resp.json().catch(() => ({})); throw new Error(err.error?.message || `API error ${resp.status}`); }
-        const data = await resp.json();
+        const data = await groqCall(systemPrompt);
         const choice = data.choices[0];
         const msg = choice.message;
         if (choice.finish_reason === 'tool_calls' && msg.tool_calls?.length) {

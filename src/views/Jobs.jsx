@@ -163,8 +163,6 @@ export default function Jobs() {
         <button className="btn primary sm" onClick={() => setAddOpen(true)}><I.plus size={14} /> {t('jobs_new')}</button>
       </PageHead>
 
-      <SqlSetupBanner />
-
       <div className="grid" style={{ gridTemplateColumns:'repeat(5,1fr)', marginBottom:16 }}>
         <StatTile icon="send" color="--acc" label={t('jobs_total')} value={stats.total} note="" />
         <StatTile icon="clock" color="--amber" label={t('jobs_pending')} value={stats.pending} note={t('jobs_no_reply')} />

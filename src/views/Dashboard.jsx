@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { db } from '../lib/supabase';
 import { I } from '../components/Icons';
 import { useAppData } from '../contexts/AppDataContext';
 import { useT } from '../contexts/LangContext';
@@ -19,7 +21,7 @@ function KpiCard({ icon, iconColor, label, value, note }) {
 }
 
 export default function Dashboard() {
-  const { user, contacts = [], deals = [], tasks = [], finance = [] } = useAppData();
+  const { user, contacts = [], deals = [], tasks = [], finance = [], refetch } = useAppData();
   const t = useT();
 
   const hour = new Date().getHours();
@@ -38,6 +40,13 @@ export default function Dashboard() {
   const pendingValue = finance.filter(f => f.type === 'invoice' && f.status !== 'Paid').reduce((s, f) => s + (f.amount || 0), 0);
   const wonValue = deals.filter(d => d.stage === 'Won').reduce((s, d) => s + (d.value || 0), 0);
   const hasAnyData = contacts.length || deals.length || tasks.length || finance.length;
+  const [localDone, setLocalDone] = useState({});
+  const toggleTask = async (task) => {
+    const newVal = !(localDone[task.id] !== undefined ? localDone[task.id] : task.done);
+    setLocalDone(d => ({ ...d, [task.id]: newVal }));
+    await db.from('tasks').update({ done: newVal }).eq('id', task.id);
+    if (newVal) setTimeout(() => refetch(), 600);
+  };
 
   return (
     <div className="view">
@@ -115,16 +124,27 @@ export default function Dashboard() {
               <div className="card-pad" style={{ color: 'var(--tx-4)', fontSize: 13, textAlign: 'center', padding: 32 }}>{t('dash_all_caught')}</div>
             ) : (
               <div className="card-pad" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 4 }}>
-                {pendingTasks.slice(0, 8).map(task => (
-                  <div key={task.id} className="row gap10" style={{ padding: '8px 4px' }}>
-                    <span style={{ width: 16, height: 16, borderRadius: 5, border: '1.6px solid var(--line-strong)', flex: 'none' }} />
-                    <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{task.title}</div>
-                      <div className="muted" style={{ fontSize: 11.5 }}>{task.due_group}</div>
+                {pendingTasks.slice(0, 8).map(task => {
+                  const isDone = localDone[task.id] !== undefined ? localDone[task.id] : task.done;
+                  return (
+                    <div key={task.id} className="row gap10" style={{ padding: '8px 4px' }}>
+                      <span onClick={() => toggleTask(task)}
+                        style={{ width: 18, height: 18, borderRadius: 5, flex: 'none', cursor: 'pointer', display: 'grid', placeItems: 'center',
+                          border: isDone ? 'none' : '1.6px solid var(--line-strong)',
+                          background: isDone ? 'var(--acc)' : 'transparent', transition: 'all .15s' }}>
+                        {isDone && <I.check2 size={12} style={{ color: '#fff' }} />}
+                      </span>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                          textDecoration: isDone ? 'line-through' : 'none', color: isDone ? 'var(--tx-4)' : 'var(--tx)', transition: 'all .15s' }}>
+                          {task.title}
+                        </div>
+                        <div className="muted" style={{ fontSize: 11.5 }}>{task.due_group}</div>
+                      </div>
+                      <Pill kind={PRIO[task.prio]} text={task.prio} />
                     </div>
-                    <Pill kind={PRIO[task.prio]} text={task.prio} />
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

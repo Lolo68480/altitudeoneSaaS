@@ -26,6 +26,21 @@ function Badge({ cat }) {
   return <span style={{ fontSize:10.5, fontWeight:700, textTransform:'uppercase', letterSpacing:'.06em', padding:'2px 8px', borderRadius:20, background:`color-mix(in srgb, var(${c}) 16%, transparent)`, color:`var(${c})` }}>{cat||'Autre'}</span>;
 }
 
+function CField({ label, req, children }) {
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+      <label style={{ fontSize:11, fontWeight:700, color:'var(--tx-3)', textTransform:'uppercase', letterSpacing:'.06em' }}>
+        {label}{req && <span style={{ color:'var(--red)', marginLeft:2 }}>*</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+function CRow({ children }) {
+  return <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>{children}</div>;
+}
+
 function AddContactModal({ onClose, onSaved }) {
   const { user } = useAppData();
   const [f, setF] = useState({ first_name:'', last_name:'', profession:'', company:'', email:'', phone:'', linkedin:'', category:'Pro', notes:'' });
@@ -51,14 +66,6 @@ function AddContactModal({ onClose, onSaved }) {
     onSaved();
   };
 
-  const F = ({ label, req, children }) => (
-    <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-      <label style={{ fontSize:11, fontWeight:700, color:'var(--tx-3)', textTransform:'uppercase', letterSpacing:'.06em' }}>{label}{req && <span style={{ color:'var(--red)', marginLeft:2 }}>*</span>}</label>
-      {children}
-    </div>
-  );
-  const Row = ({ children }) => <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>{children}</div>;
-
   return (
     <div style={{ position:'fixed', inset:0, zIndex:400, display:'grid', placeItems:'center', padding:16 }}>
       <div onClick={onClose} style={{ position:'absolute', inset:0, background:'rgba(0,0,0,.6)', backdropFilter:'blur(4px)' }} />
@@ -70,27 +77,27 @@ function AddContactModal({ onClose, onSaved }) {
         <form onSubmit={submit}>
           <div className="card-pad" style={{ display:'flex', flexDirection:'column', gap:14 }}>
             {err && <div style={{ background:'rgba(251,113,133,.12)', color:'var(--red)', border:'1px solid rgba(251,113,133,.4)', borderRadius:8, padding:'10px 14px', fontSize:12.5 }}>{err}</div>}
-            <Row>
-              <F label="Prénom" req><input className="set-input" value={f.first_name} onChange={up('first_name')} required autoFocus /></F>
-              <F label="Nom"><input className="set-input" value={f.last_name} onChange={up('last_name')} /></F>
-            </Row>
-            <Row>
-              <F label="Profession / Poste"><input className="set-input" value={f.profession} onChange={up('profession')} placeholder="Designer, Dev, Comptable…" /></F>
-              <F label="Entreprise"><input className="set-input" value={f.company} onChange={up('company')} /></F>
-            </Row>
-            <Row>
-              <F label="Email"><input className="set-input" type="email" value={f.email} onChange={up('email')} /></F>
-              <F label="Téléphone"><input className="set-input" type="tel" value={f.phone} onChange={up('phone')} /></F>
-            </Row>
-            <Row>
-              <F label="LinkedIn / Site web"><input className="set-input" value={f.linkedin} onChange={up('linkedin')} placeholder="linkedin.com/in/…" /></F>
-              <F label="Catégorie">
+            <CRow>
+              <CField label="Prénom" req><input className="set-input" value={f.first_name} onChange={up('first_name')} required autoFocus /></CField>
+              <CField label="Nom"><input className="set-input" value={f.last_name} onChange={up('last_name')} /></CField>
+            </CRow>
+            <CRow>
+              <CField label="Profession / Poste"><input className="set-input" value={f.profession} onChange={up('profession')} placeholder="Designer, Dev, Comptable…" /></CField>
+              <CField label="Entreprise"><input className="set-input" value={f.company} onChange={up('company')} /></CField>
+            </CRow>
+            <CRow>
+              <CField label="Email"><input className="set-input" type="email" value={f.email} onChange={up('email')} /></CField>
+              <CField label="Téléphone"><input className="set-input" type="tel" value={f.phone} onChange={up('phone')} /></CField>
+            </CRow>
+            <CRow>
+              <CField label="LinkedIn / Site web"><input className="set-input" value={f.linkedin} onChange={up('linkedin')} placeholder="linkedin.com/in/…" /></CField>
+              <CField label="Catégorie">
                 <select className="set-input" value={f.category} onChange={up('category')}>
                   {CATS.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
-              </F>
-            </Row>
-            <F label="Notes rapides"><textarea className="set-input" value={f.notes} onChange={up('notes')} rows={2} style={{ resize:'vertical' }} placeholder="Comment vous vous êtes rencontrés, contexte, etc." /></F>
+              </CField>
+            </CRow>
+            <CField label="Notes rapides"><textarea className="set-input" value={f.notes} onChange={up('notes')} rows={2} style={{ resize:'vertical' }} placeholder="Comment vous vous êtes rencontrés, contexte, etc." /></CField>
             <div className="row gap8" style={{ marginTop:4 }}>
               <span className="spacer" />
               <button type="button" className="btn" onClick={onClose}>Annuler</button>

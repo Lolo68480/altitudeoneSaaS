@@ -54,7 +54,14 @@ export function NewClientModal({ onClose }) {
   const onSubmit = async e => {
     e.preventDefault(); setSaving(true); setErrMsg('');
     const { error } = await db.from('clients').insert({ user_id: user.id, company: f.company, contact: f.contact||null, industry: f.industry||null, website: f.website||null, email: f.email||null, phone: f.phone||null, mrr: parseFloat(f.mrr)||0, health: f.health, since: f.since, projects: 0, value: 0 });
-    if (error) { setErrMsg(error.message); setSaving(false); return; }
+    if (error) {
+      const msg = error.message || '';
+      if (msg.includes('schema cache') || msg.includes('column')) setErrMsg('Colonne manquante dans la base de données. Lance ce SQL dans Supabase → SQL Editor : ALTER TABLE clients ADD COLUMN IF NOT EXISTS email text; ALTER TABLE clients ADD COLUMN IF NOT EXISTS phone text;');
+      else if (msg.includes('permission') || msg.includes('policy')) setErrMsg('Permission refusée. Vérifie les politiques RLS dans Supabase.');
+      else if (msg.includes('duplicate') || msg.includes('unique')) setErrMsg('Ce contact existe déjà.');
+      else setErrMsg('Erreur lors de l\'enregistrement : ' + msg);
+      setSaving(false); return;
+    }
     await refetch(); onClose();
   };
   return (

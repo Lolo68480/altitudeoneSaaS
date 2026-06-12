@@ -245,10 +245,52 @@ export function Tasks() {
   );
 }
 
+function EditDocumentModal({ doc, onClose, onSaved }) {
+  const t = useT();
+  const folderOpts = [['Contracts','doc_contracts'],['Quotes','doc_quotes'],['Invoices','doc_invoices'],['Certificates','doc_certificates'],['Legal','doc_legal'],['Brand assets','doc_brand']];
+  const [name, setName] = useState(doc.name || '');
+  const [folder, setFolder] = useState(doc.folder || 'Contracts');
+  const [url, setUrl] = useState(doc.url || '');
+  const [saving, setSaving] = useState(false);
+  const submit = async (e) => {
+    e.preventDefault(); setSaving(true);
+    await db.from('documents').update({ name: name.trim(), folder, url: url.trim() || null }).eq('id', doc.id);
+    onSaved();
+  };
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex:400, display:'grid', placeItems:'center', padding:16 }}>
+      <div onClick={onClose} style={{ position:'absolute', inset:0, background:'rgba(0,0,0,.6)', backdropFilter:'blur(4px)' }} />
+      <div className="card" style={{ position:'relative', width:460, maxWidth:'100%', boxShadow:'var(--shadow-lg)', animation:'fadeUp .22s var(--ease)' }}>
+        <div className="card-head"><h3 style={{ fontSize:15 }}>Modifier le document</h3><div className="right"><button className="icon-btn" onClick={onClose}><I.x size={16}/></button></div></div>
+        <form onSubmit={submit}>
+          <div className="card-pad" style={{ display:'flex', flexDirection:'column', gap:13 }}>
+            <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+              <label style={{ fontSize:11, fontWeight:700, color:'var(--tx-3)', textTransform:'uppercase', letterSpacing:'.06em' }}>{t('f_filename')} <span style={{ color:'var(--red)' }}>*</span></label>
+              <input className="set-input" value={name} onChange={e => setName(e.target.value)} required autoFocus />
+            </div>
+            <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+              <label style={{ fontSize:11, fontWeight:700, color:'var(--tx-3)', textTransform:'uppercase', letterSpacing:'.06em' }}>{t('f_folder')}</label>
+              <select className="set-input" value={folder} onChange={e => setFolder(e.target.value)}>
+                {folderOpts.map(([val, key]) => <option key={val} value={val}>{t(key)}</option>)}
+              </select>
+            </div>
+            <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+              <label style={{ fontSize:11, fontWeight:700, color:'var(--tx-3)', textTransform:'uppercase', letterSpacing:'.06em' }}>Lien (Google Drive, Dropbox…)</label>
+              <input className="set-input" type="url" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://drive.google.com/…" />
+            </div>
+            <div className="row gap8" style={{ marginTop:4 }}><span className="spacer" /><button type="button" className="btn" onClick={onClose}>{t('cancel')}</button><button type="submit" className="btn primary" disabled={saving}>{saving ? t('saving') : t('save')}</button></div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export function Documents() {
   const { documents: dbDocs = [], refetch } = useAppData();
   const t = useT();
   const [addOpen, setAddOpen] = useState(false);
+  const [editDoc, setEditDoc] = useState(null);
 
   const folderKeys = ['doc_contracts','doc_quotes','doc_invoices','doc_certificates','doc_legal','doc_brand'];
   const folderEn = ['Contracts','Quotes','Invoices','Certificates','Legal','Brand assets'];
@@ -300,6 +342,7 @@ export function Documents() {
                   <td style={{ textAlign: 'right' }}>
                     <div style={{ display:'flex', gap:6, justifyContent:'flex-end' }}>
                       {r.url && <a href={r.url} target="_blank" rel="noopener" className="icon-btn" style={{ width:28, height:28, color:'var(--acc-2)' }} title="Ouvrir" onClick={e => e.stopPropagation()}><I.globe size={14} /></a>}
+                      <button className="icon-btn" style={{ width:28, height:28 }} onClick={e => { e.stopPropagation(); setEditDoc(r); }} title="Modifier"><I.edit size={13} /></button>
                       <button className="icon-btn" style={{ width: 28, height: 28, color: 'var(--tx-4)' }} onClick={e => { e.stopPropagation(); deleteDoc(r); }}><I.trash size={14} /></button>
                     </div>
                   </td>
@@ -310,6 +353,7 @@ export function Documents() {
         </div>
       )}
       {addOpen && <NewDocumentModal onClose={() => setAddOpen(false)} />}
+      {editDoc && <EditDocumentModal doc={editDoc} onClose={() => setEditDoc(null)} onSaved={async () => { setEditDoc(null); await refetch(); }} />}
     </div>
   );
 }

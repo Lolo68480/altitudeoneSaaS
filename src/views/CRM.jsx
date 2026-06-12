@@ -38,7 +38,7 @@ function EditDealModal({ deal, onClose, onSaved, t }) {
   );
 }
 
-function DealDrawer({ deal, onClose, onDelete, t }) {
+function DealDrawer({ deal, onClose, onDelete, onEdit, t }) {
   const emailHref = deal.email ? 'mailto:' + deal.email : null;
   const telHref = deal.phone ? 'tel:' + deal.phone : null;
   const rows = [

@@ -100,6 +100,7 @@ function App({ user, onLogout }) {
   const [route, setRoute] = useState(() => location.hash.slice(1) || 'dashboard');
   const [search, setSearch] = useState('');
   const [searchFocus, setSearchFocus] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const collapsed = tweaks.sidebar === 'collapsed';
 
   useEffect(() => {
@@ -113,7 +114,7 @@ function App({ user, onLogout }) {
     document.documentElement.setAttribute('data-accent', accent);
   }, [tweaks.accent]);
 
-  const go = (id) => { location.hash = id; setRoute(id); setSearch(''); };
+  const go = (id) => { location.hash = id; setRoute(id); setSearch(''); setMobileNavOpen(false); };
   const View = VIEWS[route] || Dashboard;
 
   const navLabel = (id) => t('nav_' + id);
@@ -140,7 +141,8 @@ function App({ user, onLogout }) {
 
   return (
     <div className={'app' + (collapsed ? ' collapsed' : '')}>
-      <aside className="sidebar">
+      {mobileNavOpen && <div className="sidebar-backdrop" onClick={() => setMobileNavOpen(false)} />}
+      <aside className={'sidebar' + (mobileNavOpen ? ' mobile-open' : '')}>
         <div className="brand">
           <div className="brand-mark"><I.plane size={16} style={{ color: '#fff' }} /></div>
           <div style={{ minWidth: 0 }}>
@@ -180,7 +182,10 @@ function App({ user, onLogout }) {
 
       <div className="main">
         <header className="topbar">
-          <button className="icon-btn" onClick={() => setTweak('sidebar', collapsed ? 'expanded' : 'collapsed')} title="Toggle sidebar">
+          <button className="icon-btn mobile-menu-btn" onClick={() => setMobileNavOpen(o => !o)} title="Menu">
+            <I.panel size={18} />
+          </button>
+          <button className="icon-btn" style={{}} onClick={() => setTweak('sidebar', collapsed ? 'expanded' : 'collapsed')} title="Toggle sidebar">
             <I.panel size={18} />
           </button>
           <div>

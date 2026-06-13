@@ -371,3 +371,96 @@ a { color: inherit; text-decoration: none; }
 .email-row:hover .email-del-btn { opacity: 1 !important; }
 .contact-del-btn { opacity: 0; transition: opacity .15s; }
 div:hover > .contact-del-btn { opacity: 1 !important; }
+
+/* ============================================================
+   RESPONSIVE — tablet ≤ 900px, mobile ≤ 600px
+   ============================================================ */
+
+/* Sidebar mobile overlay */
+.sidebar-backdrop {
+  display: none;
+  position: fixed; inset: 0; z-index: 99;
+  background: rgba(0,0,0,.6); backdrop-filter: blur(3px);
+}
+
+@media (max-width: 900px) {
+  /* App shell : sidebar sort du flux */
+  .app { grid-template-columns: 1fr !important; }
+  .app.collapsed { grid-template-columns: 1fr !important; }
+
+  /* Sidebar : cachée par défaut, glisse depuis la gauche */
+  .sidebar {
+    position: fixed; top: 0; left: -100%; bottom: 0;
+    width: var(--sidebar-w) !important;
+    z-index: 100;
+    transition: left .28s var(--ease);
+    box-shadow: var(--shadow-lg);
+  }
+  .sidebar.mobile-open { left: 0; }
+  .sidebar-backdrop { display: block; }
+
+  /* Topbar : montrer le bouton hamburger */
+  .mobile-menu-btn { display: grid !important; }
+
+  /* Page padding réduit */
+  .page { padding: 16px 14px 48px; }
+
+  /* KPI grid : 2 colonnes max */
+  .grid[style*="repeat(4"] { grid-template-columns: repeat(2, 1fr) !important; }
+  .grid[style*="repeat(3"] { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Grilles 2 col → 1 col */
+  .grid[style*="1.4fr 1fr"],
+  .grid[style*="1fr 1fr"],
+  .grid[style*="340px"],
+  .grid[style*="300px"],
+  .grid[style*="270px"],
+  .grid[style*="280px"] { grid-template-columns: 1fr !important; }
+
+  /* Tables : scroll horizontal */
+  .card .tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tbl { min-width: 560px; }
+
+  /* Kanban & pipeline : scroll horizontal */
+  .kb-cols { grid-auto-flow: column; grid-auto-columns: 260px; overflow-x: auto; padding-bottom: 8px; }
+  .pipe { grid-auto-columns: 200px; overflow-x: auto; padding-bottom: 8px; }
+
+  /* Modals : pleine largeur */
+  .card[style*="width:560"],
+  .card[style*="width: 560"],
+  .card[style*="width:520"],
+  .card[style*="width: 520"],
+  .card[style*="width:500"],
+  .card[style*="width: 500"],
+  .card[style*="width:480"],
+  .card[style*="width: 480"],
+  .card[style*="width:460"],
+  .card[style*="width: 460"],
+  .card[style*="width:440"],
+  .card[style*="width: 440"],
+  .card[style*="width:420"],
+  .card[style*="width: 420"] { width: 100% !important; margin: 0 !important; border-radius: var(--radius) !important; }
+
+  /* Topbar : moins de padding, cacher la barre de recherche */
+  .topbar { padding: 0 14px; gap: 10px; }
+  .topbar .search { display: none; }
+  .topbar .page-crumb { display: none; }
+}
+
+@media (max-width: 600px) {
+  /* KPI : 2 colonnes serrées */
+  .grid[style*="repeat(4"] { grid-template-columns: repeat(2, 1fr) !important; }
+  .kpi .kpi-val { font-size: 22px; }
+
+  /* Boutons header : cacher les labels sur petits écrans */
+  .page-title { font-size: 14px; }
+
+  /* Réduire les modals en hauteur */
+  .card[style*="maxHeight"] { max-height: 95vh !important; }
+
+  /* Réduire padding des cards */
+  .card-pad { padding: 14px; }
+  .card-head { padding: 12px 14px; }
+}
+
+.mobile-menu-btn { display: none; }
